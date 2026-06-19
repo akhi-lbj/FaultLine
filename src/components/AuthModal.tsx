@@ -25,6 +25,9 @@ export default function AuthModal({ onSuccess, onClose, isLightTheme, initialMod
       setLoading(true);
       setError('');
       const res = await loginWithGoogle();
+      if (typeof pendo !== 'undefined') {
+        pendo.track("user_logged_in", { authMethod: "google" });
+      }
       onSuccess(res.user);
     } catch (err: any) {
       if (err.code !== 'auth/popup-closed-by-user') {
@@ -45,6 +48,11 @@ export default function AuthModal({ onSuccess, onClose, isLightTheme, initialMod
       setError('');
       setResetSuccess('');
       await sendResetEmail(email);
+      if (typeof pendo !== 'undefined') {
+        pendo.track("password_reset_requested", {
+          emailDomain: email.split('@')[1] || ""
+        });
+      }
       setResetSuccess('Password reset email sent. Please check your inbox (and spam/junk folder). After changing your password, you can log in below.');
     } catch (err: any) {
       setError(err.message || 'Failed to send reset email');
@@ -65,9 +73,18 @@ export default function AuthModal({ onSuccess, onClose, isLightTheme, initialMod
       setError('');
       if (mode === 'login') {
         const res = await loginWithEmail(email, password);
+        if (typeof pendo !== 'undefined') {
+          pendo.track("user_logged_in", { authMethod: "email" });
+        }
         onSuccess(res.user);
       } else {
         const res = await signupWithEmail(email, password, fullName);
+        if (typeof pendo !== 'undefined') {
+          pendo.track("user_signed_up", {
+            authMethod: "email",
+            hasDisplayName: !!fullName
+          });
+        }
         onSuccess(res.user);
       }
     } catch (err: any) {

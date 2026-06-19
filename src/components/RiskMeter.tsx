@@ -29,6 +29,15 @@ export default function RiskMeter({ analysis, onConfigChanged }: RiskMeterProps)
       });
       const data = await response.json();
       if (data.config) {
+        // Pendo Track: calibration_config_updated
+        if (typeof pendo !== 'undefined') {
+          pendo.track("calibration_config_updated", {
+            coefficientA: coefA,
+            coefficientB: coefB,
+            previousCoefficientA: config.coefficientA,
+            previousCoefficientB: config.coefficientB
+          });
+        }
         setConfig(data.config);
         onConfigChanged(data.config);
       }

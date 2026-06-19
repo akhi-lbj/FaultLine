@@ -206,10 +206,41 @@ export default function FinancialRiskCard({ analysis, config }: FinancialRiskCar
               <div 
                 key={action.id}
                 onClick={() => {
-                  if (isChecked) {
-                    setSelectedActionIds(prev => prev.filter(id => id !== action.id));
-                  } else {
-                    setSelectedActionIds(prev => [...prev, action.id]);
+                  const newSelectedIds = isChecked
+                    ? selectedActionIds.filter(id => id !== action.id)
+                    : [...selectedActionIds, action.id];
+                  setSelectedActionIds(newSelectedIds);
+
+                  // Pendo Track: derisk_simulation_completed
+                  if (typeof pendo !== 'undefined') {
+                    let simReduction = 0;
+                    analysis.recommendedNextActions.forEach(a => {
+                      if (newSelectedIds.includes(a.id)) simReduction += a.expectedRiskReduction;
+                    });
+                    const simFfs = Math.max(10, baseFfs - simReduction);
+                    const simExp = coefA * simFfs + coefB;
+                    const simPFail = 1 / (1 + Math.exp(simExp));
+                    const simLoss = Math.round(budget * simPFail);
+                    const saved = Math.max(0, Math.round(budget * analysis.pFail) - simLoss);
+                    let simRec = 'VALIDATED_BUILD';
+                    if (simPFail >= 0.20 && simPFail < 0.35) simRec = 'PILOT_RECOMMENDED';
+                    else if (simPFail >= 0.35 && simPFail < 0.65) simRec = 'CONDITIONAL_REVIEW';
+                    else if (simPFail >= 0.65) simRec = 'HALT_ALLOCATION';
+
+                    pendo.track("derisk_simulation_completed", {
+                      featureName: analysis.featureName,
+                      actionId: action.id,
+                      actionName: action.action.substring(0, 50),
+                      isSelected: !isChecked,
+                      totalSelectedActions: newSelectedIds.length,
+                      totalAvailableActions: analysis.recommendedNextActions.length,
+                      baseFfs,
+                      simulatedFfs: simFfs,
+                      simulatedPFail: simPFail,
+                      simulatedExpectedLoss: simLoss,
+                      capitalSaved: saved,
+                      simulatedRecommendation: simRec
+                    });
                   }
                 }}
                 className={`p-3 border rounded-lg cursor-pointer transition-all space-y-1.5 ${

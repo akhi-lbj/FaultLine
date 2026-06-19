@@ -61,6 +61,14 @@ export default function DeleteAccountModal({ onClose, onSuccess, isLightTheme }:
       
       setSuccessMsg("Account deletion email sent successfully.");
       setCooldown(60);
+
+      // Pendo Track: account_deletion_requested
+      if (typeof pendo !== 'undefined') {
+        pendo.track("account_deletion_requested", {
+          isGoogleUser: true,
+          authProvider: "google"
+        });
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to send account deletion email.');
     } finally {
@@ -84,6 +92,19 @@ export default function DeleteAccountModal({ onClose, onSuccess, isLightTheme }:
       await reauthenticateUser(password);
       // Once authenticated, delete the user
       await deleteUserAccount();
+
+      // Pendo Track: account_deletion_requested + confirmed (direct flow)
+      if (typeof pendo !== 'undefined') {
+        pendo.track("account_deletion_requested", {
+          isGoogleUser: false,
+          authProvider: "email"
+        });
+        pendo.track("account_deletion_confirmed", {
+          deletionMethod: "direct",
+          isGoogleUser: false
+        });
+      }
+
       onSuccess();
     } catch (err: any) {
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {

@@ -195,6 +195,15 @@ function MainApp({ hash, user, loading, logout }: { hash: string, user: any, loa
     setFeatureName(tpl.name);
     setTranscriptText(tpl.text);
     setBudgetAmount(tpl.budget);
+
+    // Pendo Track: scenario_template_loaded
+    if (typeof pendo !== 'undefined') {
+      pendo.track("scenario_template_loaded", {
+        templateName: tpl.name,
+        templateIndex: TRANSCRIPT_TEMPLATES.indexOf(tpl),
+        templateBudget: tpl.budget
+      });
+    }
   };
 
   // Main Audit Analyst triggering POST
@@ -239,6 +248,27 @@ function MainApp({ hash, user, loading, logout }: { hash: string, user: any, loa
       
       // Auto-trigger db refresh
       await fetchData();
+
+      // Pendo Track: transcript_audit_completed
+      if (typeof pendo !== 'undefined') {
+        pendo.track("transcript_audit_completed", {
+          featureName,
+          budgetAmount,
+          transcriptLength: transcriptText.length,
+          ffsRaw: data.ffsRaw,
+          iqsRaw: data.iqsRaw,
+          pFail: data.pFail,
+          recommendation: data.recommendation,
+          contradictionCount: (data.contradictions || []).length,
+          politenessBiasCount: (data.politenessBiases || []).length,
+          leadingQuestionCount: (data.leadingQuestions || []).length,
+          frictionGapCount: (data.frictionGaps || []).length,
+          confidenceScore: data.confidenceScore,
+          expectedLoss: data.expectedLoss,
+          isFromTemplate: TRANSCRIPT_TEMPLATES.some(t => t.name === featureName && t.text === transcriptText),
+          source: "manual"
+        });
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -282,6 +312,19 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
         const data = await response.json();
         setActiveAnalysis(data);
         await fetchData();
+
+        // Pendo Track: portfolio_item_reanalyzed
+        if (typeof pendo !== 'undefined') {
+          pendo.track("portfolio_item_reanalyzed", {
+            featureName: item.featureName,
+            budget: item.budget,
+            hadMatchingTemplate: !!matchedTemplate,
+            ffsRaw: data.ffsRaw,
+            iqsRaw: data.iqsRaw,
+            pFail: data.pFail,
+            recommendation: data.recommendation
+          });
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -298,6 +341,16 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
 
       await fetch(`/api/portfolio/${id}`, { method: "DELETE", headers: await getHeaders() });
       await fetchData();
+
+      // Pendo Track: portfolio_item_deleted
+      if (typeof pendo !== 'undefined') {
+        pendo.track("portfolio_item_deleted", {
+          featureId: id,
+          featureName: itemToDelete?.featureName || "",
+          wasActiveAnalysis: isCurrentlyActive,
+          portfolioSizeAfter: portfolio.length - 1
+        });
+      }
 
       if (isCurrentlyActive) {
         setActiveAnalysis(null);
@@ -316,6 +369,16 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
         body: JSON.stringify({ featureName: name, budget, status })
       });
       await fetchData();
+
+      // Pendo Track: portfolio_item_added
+      if (typeof pendo !== 'undefined') {
+        pendo.track("portfolio_item_added", {
+          featureName: name,
+          budget,
+          initialStatus: status,
+          portfolioSizeAfter: portfolio.length + 1
+        });
+      }
     } catch (err) {
       console.error(err);
     }
@@ -324,12 +387,25 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
   // Update portfolio status
   const handleUpdateStatus = async (id: string, status: any) => {
     try {
+      const item = portfolio.find(p => p.id === id);
       await fetch(`/api/portfolio/${id}`, {
         method: "PUT",
         headers: await getHeaders(),
         body: JSON.stringify({ status })
       });
       await fetchData();
+
+      // Pendo Track: portfolio_status_updated
+      if (typeof pendo !== 'undefined') {
+        pendo.track("portfolio_status_updated", {
+          featureId: id,
+          featureName: item?.featureName || "",
+          newStatus: status,
+          previousStatus: item?.status || "",
+          pFail: item?.pFail,
+          recommendation: item?.recommendation || ""
+        });
+      }
     } catch (err) {
       console.error(err);
     }
@@ -344,6 +420,18 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
         body: JSON.stringify(record)
       });
       await fetchData();
+
+      // Pendo Track: validation_record_added
+      if (typeof pendo !== 'undefined') {
+        pendo.track("validation_record_added", {
+          featureName: record.featureName,
+          ffsRaw: record.ffsRaw,
+          iqsRaw: record.iqsRaw,
+          pFail: record.pFail,
+          budget: record.budget,
+          actualOutcome: record.actualOutcome
+        });
+      }
     } catch (err) {
       console.error(err);
     }
@@ -352,8 +440,18 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
   // Delete validation record
   const handleDeleteValidationRecord = async (id: string) => {
     try {
+      const record = validationRecords.find(r => r.id === id);
       await fetch(`/api/validation/${id}`, { method: "DELETE", headers: await getHeaders() });
       await fetchData();
+
+      // Pendo Track: validation_record_deleted
+      if (typeof pendo !== 'undefined') {
+        pendo.track("validation_record_deleted", {
+          recordId: id,
+          featureName: record?.featureName || "",
+          actualOutcome: record?.actualOutcome || ""
+        });
+      }
     } catch (err) {
       console.error(err);
     }

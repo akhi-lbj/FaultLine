@@ -48,6 +48,14 @@ export default function DeleteAccountConfirmPage({ token }: DeleteAccountConfirm
           throw new Error(errorMessage);
         }
         
+        // Pendo Track: account_deletion_confirmed
+        if (typeof pendo !== 'undefined') {
+          pendo.track("account_deletion_confirmed", {
+            deletionMethod: "email_confirmation",
+            isGoogleUser: true
+          });
+        }
+
         await signOut(auth);
         localStorage.clear();
         sessionStorage.clear();

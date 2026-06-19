@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layers, Plus, Trash2, ArrowUpRight, Search, TrendingUp, AlertTriangle } from 'lucide-react';
 import { PortfolioItem } from '../types';
 
@@ -17,6 +17,21 @@ export default function PortfolioGrid({ items, onSelectItem, onDeleteItem, onAdd
   const [newBudget, setNewBudget] = useState(150000);
   const [newStatus, setNewStatus] = useState<'InDiscovery' | 'Reviewing' | 'Committed'>('InDiscovery');
   const [search, setSearch] = useState("");
+
+  // Pendo Track: portfolio_searched (debounced)
+  useEffect(() => {
+    if (!search) return;
+    const timer = setTimeout(() => {
+      if (typeof pendo !== 'undefined') {
+        pendo.track("portfolio_searched", {
+          searchQuery: search.substring(0, 100),
+          resultsCount: items.filter(x => x.featureName.toLowerCase().includes(search.toLowerCase())).length,
+          totalPortfolioSize: items.length
+        });
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
