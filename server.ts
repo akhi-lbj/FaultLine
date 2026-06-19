@@ -1056,7 +1056,7 @@ app.get("/api/portfolio", requireAuth, async (req: any, res: any) => {
   
   try {
     const result = await adminDc.executeQuery("GetPortfolioByUser", undefined, { impersonate: { authClaims: { sub: uid } } });
-    const features = result.data.features || [];
+    const features = (result.data as any).features || [];
     
     const portfolio = features.map((f: any) => {
       let analysis = null;
@@ -1102,7 +1102,7 @@ app.post("/api/portfolio", requireAuth, async (req: any, res: any) => {
     }, { impersonate: { authClaims: { sub: uid } } });
 
     res.status(201).json({
-      id: result.data.feature_insert.id,
+      id: (result.data as any).feature_insert.id,
       featureName,
       budget: budget || 100000,
       status: status || "InDiscovery",
@@ -1651,17 +1651,17 @@ app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
       const fResult = await adminDc.executeGraphql(queryStr);
       
       let featureId;
-      if (fResult.data && fResult.data.features && fResult.data.features.length > 0) {
-        featureId = fResult.data.features[0].id;
+      if (fResult.data && (fResult.data as any).features && (fResult.data as any).features.length > 0) {
+        featureId = (fResult.data as any).features[0].id;
         await adminDc.executeMutation("UpdateFeature", { id: featureId, budget: allocatedBudget, status: "Reviewing" }, imp);
       } else {
         const newFeat = await adminDc.executeMutation("CreateFeature", { name: featureName, budget: allocatedBudget, status: "Reviewing" }, imp);
-        featureId = newFeat.data.feature_insert.id;
+        featureId = (newFeat.data as any).feature_insert.id;
       }
       
       // 3. Insert Transcript
       const transResult = await adminDc.executeMutation("InsertTranscript", { featureId, rawText: transcript }, imp);
-      const transcriptId = transResult.data.transcript_insert.id;
+      const transcriptId = (transResult.data as any).transcript_insert.id;
       
       // 4. Insert Analysis Engine Results
       const analResult = await adminDc.executeMutation("InsertAnalysis", {
@@ -1674,7 +1674,7 @@ app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
         recommendation: fullAnalysis.recommendation,
         confidenceScore: fullAnalysis.confidenceScore
       }, imp);
-      const analysisId = analResult.data.analysis_insert.id;
+      const analysisId = (analResult.data as any).analysis_insert.id;
       
       // 5. Insert Signals & Recommendations sequentially (to avoid bombarding connection)
       for(const c of fullAnalysis.contradictions) {
