@@ -16,6 +16,9 @@ dotenv.config();
 if (getApps().length === 0) {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    if (serviceAccount.private_key) {
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
     initializeApp({
       credential: cert(serviceAccount)
     });
@@ -1453,7 +1456,7 @@ app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
       };
 
       const result = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.5-flash",
         contents: prompt,
         config: {
           systemInstruction,
