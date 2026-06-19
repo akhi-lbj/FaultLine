@@ -1,0 +1,6 @@
+{
+  "name": "FaultLine",
+  "description": "A Roadmap Risk Intelligence System that predicts whether customer discovery evidence justifies building a feature.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

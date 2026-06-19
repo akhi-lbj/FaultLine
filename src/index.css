@@ -1,0 +1,262 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --color-zinc-950: #050507;
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* UNIVERSAL BUTTER-SMOOTH TRANSITIONS FOR SEAMLESS THEME SWITCHES */
+body, div, header, main, section, footer, aside, button, h1, h2, h3, h4, p, span, a, input, textarea, select, table, th, td, blockquote {
+  transition: background-color 400ms cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 400ms cubic-bezier(0.4, 0, 0.2, 1), 
+              color 400ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Match smooth transitions dynamically across all children when theme class is toggled */
+body, body *, .light-theme, .light-theme * {
+  transition-duration: 400ms !important;
+  transition-property: background-color, border-color, color, box-shadow, transform !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* COMPREHENSIVE LIGHT THEME OVERRIDES (No faultline-root prefix constraint) */
+.light-theme {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+/* Base layouts background and borders */
+.light-theme header,
+.light-theme main,
+.light-theme section,
+.light-theme footer,
+.light-theme aside,
+.light-theme .bg-zinc-950,
+.light-theme .bg-zinc-950\/80,
+.light-theme .bg-zinc-950\/70,
+.light-theme .bg-zinc-950\/50,
+.light-theme .bg-zinc-950\/90,
+.light-theme .bg-zinc-950\/40 {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Section background wrapper for value prop cards */
+.light-theme section.bg-zinc-950\/30,
+.light-theme section {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Individual value proposition card wrappers - sparkling dry white */
+.light-theme .bg-zinc-950\/30,
+.light-theme div.bg-zinc-950\/30,
+.light-theme section .bg-zinc-950\/30 {
+  background-color: #ffffff !important;
+  color: #1a202c !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Icon tag color overrides under light theme */
+.light-theme .bg-red-900\/10 {
+  background-color: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+  color: #b91c1c !important;
+}
+.light-theme .bg-purple-900\/10 {
+  background-color: #f3e8ff !important;
+  border-color: #d8b4fe !important;
+  color: #6b21a8 !important;
+}
+.light-theme .bg-emerald-900\/10 {
+  background-color: #d1fae5 !important;
+  border-color: #6ee7b7 !important;
+  color: #047857 !important;
+}
+
+/* Dashboard/Landing card backgrounds */
+.light-theme .bg-zinc-900,
+.light-theme .bg-zinc-900\/60,
+.light-theme .bg-zinc-900\/40,
+.light-theme .bg-zinc-900\/30,
+.light-theme .bg-zinc-950\/40 {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Deep inner containers and inputs */
+.light-theme .bg-zinc-950,
+.light-theme .bg-zinc-950 .bg-zinc-950 {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Text overrides */
+.light-theme .text-white,
+.light-theme .text-zinc-100,
+.light-theme .text-zinc-200,
+.light-theme .text-zinc-300 {
+  color: #0f172a !important;
+}
+
+.light-theme .text-zinc-350,
+.light-theme .text-zinc-400 {
+  color: #334155 !important;
+}
+
+.light-theme .text-zinc-500,
+.light-theme .text-zinc-650 {
+  color: #64748b !important;
+}
+
+/* Form border states */
+.light-theme .border-zinc-900,
+.light-theme .border-zinc-800,
+.light-theme .border-zinc-805,
+.light-theme .border-zinc-800\/80,
+.light-theme .border-zinc-700,
+.light-theme .border-zinc-700\/60 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Text fields and dropdown boxes */
+.light-theme input,
+.light-theme textarea,
+.light-theme select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light-theme input:focus,
+.light-theme textarea:focus,
+.light-theme select:focus {
+  border-color: #94a3b8 !important;
+}
+
+/* Custom UI buttons */
+.light-theme button.bg-zinc-800,
+.light-theme .bg-zinc-800 {
+  background-color: #e2e8f0 !important;
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light-theme button.bg-zinc-850,
+.light-theme .bg-zinc-850 {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+/* Scenario toggling items */
+.light-theme button.bg-zinc-900\/40 {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.light-theme button.bg-zinc-900\/40:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Gradient card and Dial overrides */
+.light-theme .bg-gradient-to-r.from-red-950\/20.via-zinc-900.to-zinc-900 {
+  background-image: linear-gradient(to right, rgba(254, 226, 226, 0.4), #ffffff, #ffffff) !important;
+  color: #111827 !important;
+  border-color: #fca5a5 !important;
+}
+
+.light-theme .bg-gradient-to-r.from-emerald-950\/20.via-zinc-950.to-zinc-950 {
+  background-image: linear-gradient(to right, rgba(209, 250, 229, 0.4), #ffffff, #ffffff) !important;
+  color: #111827 !important;
+  border-color: #6ee7b7 !important;
+}
+
+.light-theme button.bg-red-950\/20 {
+  background-color: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+  color: #991b1b !important;
+}
+
+/* Interactive dialog backgrounds */
+.light-theme .bg-black\/80 {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Semantic alert states */
+.light-theme .bg-red-500\/10,
+.light-theme .bg-red-950\/40, 
+.light-theme .bg-red-950\/10 {
+  background-color: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #fca5a5 !important;
+}
+
+.light-theme .text-red-400 {
+  color: #dc2626 !important;
+}
+
+.light-theme .bg-purple-500\/10,
+.light-theme .bg-purple-950\/30 {
+  background-color: #faf5ff !important;
+  color: #7e22ce !important;
+  border-color: #e9d5ff !important;
+}
+
+.light-theme .text-purple-400 {
+  color: #9333ea !important;
+}
+
+.light-theme .bg-amber-500\/10,
+.light-theme .bg-amber-950\/30 {
+  background-color: #fffbeb !important;
+  color: #d97706 !important;
+  border-color: #fde047 !important;
+}
+
+.light-theme .text-amber-400 {
+  color: #d97706 !important;
+}
+
+.light-theme .bg-emerald-500\/10,
+.light-theme .bg-emerald-950\/20 {
+  background-color: #ecfdf5 !important;
+  color: #059669 !important;
+  border-color: #a7f3d0 !important;
+}
+
+.light-theme .text-emerald-400 {
+  color: #059669 !important;
+}
+
+/* Table grid overrides */
+.light-theme thead th {
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.light-theme tbody tr {
+  border-color: #e2e8f0 !important;
+}
+
+.light-theme tbody tr:hover {
+  background-color: #f1f5f9 !important;
+}
