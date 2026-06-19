@@ -2033,9 +2033,17 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`FaultLine server listening on http://localhost:${PORT}`);
-  });
+  // Only listen on a port if not running in Vercel
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`FaultLine server listening on http://localhost:${PORT}`);
+    });
+  }
 }
 
-startServer();
+// Only start the server if not running in Vercel (where it is used as a serverless function)
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;
