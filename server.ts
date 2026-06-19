@@ -6,7 +6,6 @@ import nodemailer from "nodemailer";
 import { getAuth } from "firebase-admin/auth";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { GoogleGenAI, Type } from "@google/genai";
-import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { getDataConnect } from "firebase-admin/data-connect";
 import { requireAuth } from "./server/middleware/requireAuth.js";
@@ -2020,6 +2019,7 @@ app.post("/api/account-deletion/immediate", requireAuth, async (req: any, res: a
 // Serve Frontend Bundle with Vite Middleware in Development
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa"
