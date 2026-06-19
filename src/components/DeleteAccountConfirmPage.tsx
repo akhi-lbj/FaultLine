@@ -13,10 +13,12 @@ export default function DeleteAccountConfirmPage({ token }: DeleteAccountConfirm
   const [status, setStatus] = useState<'loading' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     if (loading) return; // Wait for auth state
 
-    if (!user) {
+    if (!user && !isDeleting) {
       if (token) sessionStorage.setItem('pendingDeletionToken', token);
       window.location.replace('/#/login');
       return;
@@ -29,6 +31,8 @@ export default function DeleteAccountConfirmPage({ token }: DeleteAccountConfirm
     }
 
     const confirmDeletion = async () => {
+      if (isDeleting) return;
+      setIsDeleting(true);
       try {
         const res = await fetch('/api/account-deletion/confirm', {
           method: 'POST',
@@ -48,11 +52,12 @@ export default function DeleteAccountConfirmPage({ token }: DeleteAccountConfirm
           throw new Error(errorMessage);
         }
         
+        alert("Your account has been permanently deleted successfully.");
+        
         await signOut(auth);
         localStorage.clear();
         sessionStorage.clear();
-
-        alert("Your account has been deleted successfully.");
+        
         window.location.replace("/#/login");
         
       } catch (err: any) {
@@ -61,7 +66,9 @@ export default function DeleteAccountConfirmPage({ token }: DeleteAccountConfirm
       }
     };
 
-    confirmDeletion();
+    if (user && token && !isDeleting && status === 'loading') {
+      confirmDeletion();
+    }
   }, [token, user, loading]);
 
   if (loading || (!user && status === 'loading')) {

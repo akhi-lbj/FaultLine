@@ -1765,6 +1765,66 @@ setupEmail();
 
 const accountActionTokens = new Map();
 
+app.post("/api/password-reset/request", async (req: any, res: any) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: "Email is required" });
+
+    try {
+      await getAuth().getUserByEmail(email);
+    } catch (userErr: any) {
+      if (userErr.code === 'auth/user-not-found') {
+        // Return success to avoid email enumeration attacks
+        return res.json({ message: "Password reset email sent." });
+      }
+      throw userErr;
+    }
+
+    // Securely generate a Firebase Auth reset link
+    const actionCodeSettings = {
+      url: process.env.PUBLIC_APP_URL || process.env.VITE_API_BASE_URL || 'http://localhost:3000/#/login',
+      handleCodeInApp: false
+    };
+    const resetLink = await getAuth().generatePasswordResetLink(email, actionCodeSettings);
+
+    const htmlBody = `
+      <p>Hello,</p>
+      <p>We received a request to reset the password for your FaultLine account.</p>
+      <p>To reset your password, click the button below:</p>
+      <p>
+        <a href="${resetLink}" style="display:inline-block; background-color:#991b1b; color:#ffffff; padding:12px 22px; text-decoration:none; border-radius:8px; font-weight:bold;">
+          Reset My Password
+        </a>
+      </p>
+      <p>If you did not request this action, you can safely ignore this email. Your password will remain unchanged.</p>
+      <p>Thanks,</p>
+      <p>The FaultLine Team</p>
+    `;
+
+    if (!transporter) {
+      console.log("\\n=== DEV MODE: PASSWORD RESET LINK ===");
+      console.log(resetLink);
+      console.log("=====================================\\n");
+      return res.json({ message: "Dev Mode: Link logged to terminal." });
+    }
+
+    const fromName = process.env.SMTP_FROM_NAME || "FaultLine";
+    const fromEmail = process.env.SMTP_FROM_EMAIL || "noreply@faultline.app";
+
+    await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: email,
+      subject: "Reset your FaultLine Password",
+      html: htmlBody,
+    });
+
+    res.json({ message: "Password reset email sent." });
+  } catch (err: any) {
+    console.error("Password reset error:", err);
+    res.status(500).json({ error: "Failed to generate password reset email." });
+  }
+});
+
 app.post("/api/account-deletion/request", requireAuth, async (req: any, res: any) => {
   try {
     const { uid, email } = req.user;
@@ -1885,37 +1945,75 @@ app.post("/api/account-deletion/confirm", async (req: any, res: any) => {
     const uid = record.userId;
     record.usedAt = Date.now();
 
-    // Try to delete from Data Connect
-    try {
-      // Best effort feature wipe
-      const queryStr = `query FindFeatures { features(where: { user: { uid: { eq: "${uid}" } } }) { id } }`;
-      const fResult = await adminDc.executeGraphql(queryStr);
-      if (fResult.data && fResult.data.features) {
-         for (const f of fResult.data.features) {
-             await adminDc.executeMutation("DeleteFeature", { id: f.id }, { impersonate: { authClaims: { sub: uid } } });
-         }
-      }
-      
-      // Permanently wipe the User row from Data Connect SQL
-      const wipeUserMutation = `mutation WipeUser { user_delete(key: { uid: "${uid}" }) { uid } }`;
-      await adminDc.executeGraphql(wipeUserMutation);
-      console.log(`Successfully wiped user ${uid} from SQL Connect database.`);
-      
-    } catch(err) {
-      console.error("Error wiping FDC data", err);
-    }
+    await performFullAccountWipe(uid);
 
-    // Delete Firebase Auth user using Admin SDK
-    try {
-      await getAuth().deleteUser(uid);
-    } catch (fbErr) {
-       console.error("Failed to delete user from Firebase:", fbErr);
-    }
-
-    return res.status(200).json({ success: true, message: "Account deleted." });
+    return res.status(200).json({ success: true, message: "Account deleted successfully." });
   } catch (error: any) {
     console.error("Account deletion confirm error:", error);
-    return res.status(500).json({ error: "Failed to confirm deletion" });
+    return res.status(500).json({ error: "Failed to delete account" });
+  }
+});
+
+// Helper function to perform the massive cascading wipe for any user
+async function performFullAccountWipe(uid: string) {
+  // Try to delete from Data Connect
+  try {
+    const queryStr = `query FindFeatures { features(where: { user: { uid: { eq: "${uid}" } } }) { id } }`;
+    const fResult = await adminDc.executeGraphql(queryStr);
+    if (fResult.data && fResult.data.features) {
+       for (const f of fResult.data.features) {
+           const tResult = await adminDc.executeGraphql(`query { transcripts(where: { featureId: { eq: "${f.id}" } }) { id } }`);
+           if (tResult.data && tResult.data.transcripts) {
+              for (const t of tResult.data.transcripts) {
+                  const aResult = await adminDc.executeGraphql(`query { analyses(where: { transcriptId: { eq: "${t.id}" } }) { id } }`);
+                  if (aResult.data && aResult.data.analyses) {
+                     for (const a of aResult.data.analyses) {
+                        await adminDc.executeGraphql(`mutation { signalContradiction_deleteMany(where: { analysisId: { eq: "${a.id}" } }) }`);
+                        await adminDc.executeGraphql(`mutation { signalPoliteness_deleteMany(where: { analysisId: { eq: "${a.id}" } }) }`);
+                        await adminDc.executeGraphql(`mutation { signalLeadingQuestion_deleteMany(where: { analysisId: { eq: "${a.id}" } }) }`);
+                        await adminDc.executeGraphql(`mutation { signalFrictionGap_deleteMany(where: { analysisId: { eq: "${a.id}" } }) }`);
+                        await adminDc.executeGraphql(`mutation { recommendedAction_deleteMany(where: { analysisId: { eq: "${a.id}" } }) }`);
+                        await adminDc.executeGraphql(`mutation { analysis_delete(key: { id: "${a.id}" }) }`);
+                     }
+                  }
+                  await adminDc.executeGraphql(`mutation { transcript_delete(key: { id: "${t.id}" }) }`);
+              }
+           }
+           await adminDc.executeGraphql(`mutation { validationRecord_deleteMany(where: { featureId: { eq: "${f.id}" } }) }`);
+           await adminDc.executeGraphql(`mutation { feature_delete(key: { id: "${f.id}" }) }`);
+       }
+    }
+    // Permanently wipe the User row from Data Connect SQL
+    const wipeUserMutation = `mutation WipeUser { user_delete(key: { uid: "${uid}" }) }`;
+    const wRes = await adminDc.executeGraphql(wipeUserMutation);
+    if (wRes.errors) {
+      console.error("Failed to delete user row:", wRes.errors);
+    } else {
+      console.log(`Successfully wiped user ${uid} from SQL Connect database.`);
+    }
+  } catch(err) {
+    console.error("Error wiping FDC data", err);
+  }
+
+  // Delete Firebase Auth user using Admin SDK
+  try {
+    await getAuth().deleteUser(uid);
+  } catch (err: any) {
+    if (err.code !== "auth/user-not-found") {
+      console.error("Error deleting auth user:", err);
+    }
+  }
+}
+
+// New endpoint for immediate deletion after frontend re-authentication (Email/Password users)
+app.post("/api/account-deletion/immediate", requireAuth, async (req: any, res: any) => {
+  try {
+    const { uid } = req.user;
+    await performFullAccountWipe(uid);
+    return res.status(200).json({ success: true, message: "Account deleted successfully." });
+  } catch (error: any) {
+    console.error("Account immediate deletion error:", error);
+    return res.status(500).json({ error: "Failed to delete account immediately" });
   }
 });
 

@@ -82,8 +82,29 @@ export default function DeleteAccountModal({ onClose, onSuccess, isLightTheme }:
       setError('');
       // Re-authenticate user first
       await reauthenticateUser(password);
-      // Once authenticated, delete the user
-      await deleteUserAccount();
+      
+      // Get fresh token
+      const token = await getCurrentUserToken();
+      if (!token) throw new Error("Not authenticated");
+
+      // Wipe Data Connect via backend
+      const res = await fetch("/api/account-deletion/immediate", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to wipe backend data");
+      }
+
+      // Backend already deletes the Auth user, but we'll also wipe the client session
+      await auth.signOut();
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      alert("Your account has been permanently deleted successfully.");
+
       onSuccess();
     } catch (err: any) {
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {

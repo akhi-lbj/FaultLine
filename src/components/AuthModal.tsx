@@ -44,7 +44,18 @@ export default function AuthModal({ onSuccess, onClose, isLightTheme, initialMod
       setLoading(true);
       setError('');
       setResetSuccess('');
-      await sendResetEmail(email);
+      
+      const res = await fetch('/api/password-reset/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to send reset email');
+      }
+      
       setResetSuccess('Password reset email sent. Please check your inbox (and spam/junk folder). After changing your password, you can log in below.');
     } catch (err: any) {
       setError(err.message || 'Failed to send reset email');
