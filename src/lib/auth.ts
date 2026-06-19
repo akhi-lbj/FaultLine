@@ -36,6 +36,7 @@ export const loginWithGoogle = async () => {
 };
 
 export const logout = () => {
+  pendo.clearSession();
   return signOut(auth);
 };
 

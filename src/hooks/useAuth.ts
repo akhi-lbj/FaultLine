@@ -18,6 +18,17 @@ export const useAuth = () => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
+      if (u) {
+        pendo.identify({
+          visitor: {
+            id: u.uid,
+            email: u.email || '',
+            full_name: u.displayName || '',
+            firebaseUid: u.uid,
+            photoUrl: u.photoURL || ''
+          }
+        });
+      }
     });
     return () => unsubscribe();
   }, []);
