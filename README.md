@@ -53,4 +53,4 @@ FaultLine is an AI-driven predictive risk auditing and decision matrix platform.
 
 ## View in AI Studio
 
-View the original app deployment in AI Studio: [https://ai.studio/apps/c0db95a1-2936-4019-b362-661a5b8a53d9](https://ai.studio/apps/c0db95a1-2936-4019-b362-661a5b8a53d9)
+View the original app deployment in AI Studio: [https://ai.studio/apps/c0db95a1-2936-4019-b362-661a5b8a53d9)
