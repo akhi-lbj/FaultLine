@@ -1,0 +1,87 @@
+mutation UpsertUser($email: String!, $displayName: String, $photoUrl: String) @auth(level: USER) {
+  user_upsert(data: {
+    uid_expr: "auth.uid"
+    email: $email
+    displayName: $displayName
+    photoUrl: $photoUrl
+  })
+}
+
+mutation CreateFeature($name: String!, $budget: Float, $status: String!) @auth(level: USER) {
+  feature_insert(
+    data: {
+      user: { uid_expr: "auth.uid" }
+      name: $name
+      budget: $budget
+      status: $status
+    }
+  )
+}
+
+mutation UpdateFeature($id: UUID!, $budget: Float, $status: String) @auth(level: USER) {
+  feature_update(
+    id: $id,
+    data: {
+      budget: $budget
+      status: $status
+    }
+  )
+}
+
+mutation InsertTranscript($featureId: UUID!, $rawText: String!) @auth(level: USER) {
+  transcript_insert(data: {
+    featureId: $featureId
+    rawText: $rawText
+  })
+}
+
+mutation InsertAnalysis(
+  $transcriptId: UUID!
+  $narrativeSummary: String
+  $ffsRaw: Float
+  $iqsRaw: Float
+  $pFail: Float
+  $expectedLoss: Float
+  $recommendation: String
+  $confidenceScore: Float
+) @auth(level: USER) {
+  analysis_insert(data: {
+    transcriptId: $transcriptId
+    narrativeSummary: $narrativeSummary
+    ffsRaw: $ffsRaw
+    iqsRaw: $iqsRaw
+    pFail: $pFail
+    expectedLoss: $expectedLoss
+    recommendation: $recommendation
+    confidenceScore: $confidenceScore
+  })
+}
+
+mutation InsertContradiction($analysisId: UUID!, $quote1: String!, $quote2: String!, $explanation: String, $severity: String) @auth(level: USER) {
+  signalContradiction_insert(data: { analysisId: $analysisId, quote1: $quote1, quote2: $quote2, explanation: $explanation, severity: $severity })
+}
+
+mutation InsertPoliteness($analysisId: UUID!, $quote: String!, $marker: String!, $intensity: String) @auth(level: USER) {
+  signalPoliteness_insert(data: { analysisId: $analysisId, quote: $quote, marker: $marker, intensity: $intensity })
+}
+
+mutation InsertLeadingQuestion($analysisId: UUID!, $question: String!, $response: String!, $severity: String) @auth(level: USER) {
+  signalLeadingQuestion_insert(data: { analysisId: $analysisId, question: $question, response: $response, severity: $severity })
+}
+
+mutation InsertFrictionGap($analysisId: UUID!, $statedImportance: String!, $actualBehavior: String!, $gapScore: Int) @auth(level: USER) {
+  signalFrictionGap_insert(data: { analysisId: $analysisId, statedImportance: $statedImportance, actualBehavior: $actualBehavior, gapScore: $gapScore })
+}
+
+mutation InsertRecommendedAction($analysisId: UUID!, $title: String!, $description: String, $expectedRiskReduction: Float, $difficulty: String, $estimatedEffortHours: Int) @auth(level: USER) {
+  recommendedAction_insert(data: { analysisId: $analysisId, title: $title, description: $description, expectedRiskReduction: $expectedRiskReduction, difficulty: $difficulty, estimatedEffortHours: $estimatedEffortHours })
+}
+
+mutation DeleteFeature($id: UUID!) @auth(level: USER) {
+  feature_delete(first: {
+    where: {
+      id: { eq: $id }
+      user: { uid: { eq_expr: "auth.uid" } }
+    }
+  })
+}

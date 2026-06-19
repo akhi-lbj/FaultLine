@@ -1,0 +1,6 @@
+connectorId: "default"
+generate:
+  adminNodeSdk:
+    outputDir: "../../src/dataconnect-admin"
+    package: "@faultline/dataconnect-admin"
+    packageJsonDir: "."

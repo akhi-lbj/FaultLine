@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { initializeApp, getApps } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import * as dotenv from "dotenv";
+
+dotenv.config();
+process.env.GOOGLE_CLOUD_PROJECT = process.env.FIREBASE_PROJECT_ID;
 
 const initializeFirebaseAdmin = () => {
   if (getApps().length > 0) return;

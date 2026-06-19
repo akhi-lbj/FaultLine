@@ -1,0 +1,931 @@
+{
+  "config": {
+    "coefficientA": -0.08,
+    "coefficientB": 3.5
+  },
+  "portfolio": [
+    {
+      "id": "p1",
+      "featureName": "AI Auto-Summarized Transcripts",
+      "ffsRaw": 55,
+      "iqsRaw": 45,
+      "pFail": 0.71,
+      "budget": 150000,
+      "expectedLoss": 106500,
+      "recommendation": "HALT_ALLOCATION",
+      "status": "Halted"
+    },
+    {
+      "id": "p2",
+      "featureName": "Excel Customer Importer Tool",
+      "ffsRaw": 0,
+      "iqsRaw": 100,
+      "pFail": 0.03,
+      "budget": 65000,
+      "expectedLoss": 1950,
+      "recommendation": "VALIDATED_BUILD",
+      "status": "Committed"
+    },
+    {
+      "id": "p3",
+      "featureName": "Slack Real-Time Notifications Engine",
+      "ffsRaw": 52,
+      "iqsRaw": 79,
+      "pFail": 0.66,
+      "budget": 120000,
+      "expectedLoss": 79200,
+      "recommendation": "HALT_ALLOCATION",
+      "status": "Reviewing"
+    },
+    {
+      "id": "p4",
+      "featureName": "Enterprise RBAC (Roles/Permissions) Portal",
+      "ffsRaw": 12,
+      "iqsRaw": 95,
+      "pFail": 0.11,
+      "budget": 180000,
+      "expectedLoss": 21780,
+      "recommendation": "VALIDATED_BUILD",
+      "status": "Launched_Success"
+    },
+    {
+      "id": "p5",
+      "featureName": "Interactive Drag-and-Drop Workflow Designer",
+      "ffsRaw": 68,
+      "iqsRaw": 42,
+      "pFail": 0.76,
+      "budget": 250000,
+      "expectedLoss": 190000,
+      "recommendation": "HALT_ALLOCATION",
+      "status": "Launched_Failure"
+    }
+  ],
+  "validationRecords": [
+    {
+      "id": "vr1",
+      "featureName": "Enterprise RBAC Portal",
+      "ffsRaw": 12,
+      "iqsRaw": 95,
+      "pFail": 0.11,
+      "budget": 180000,
+      "actualOutcome": "SUCCESS",
+      "completedAt": "2026-02-15"
+    },
+    {
+      "id": "vr2",
+      "featureName": "Dynamic PDF Reporter",
+      "ffsRaw": 55,
+      "iqsRaw": 50,
+      "pFail": 0.65,
+      "budget": 90000,
+      "actualOutcome": "FAILURE",
+      "completedAt": "2025-11-10"
+    },
+    {
+      "id": "vr3",
+      "featureName": "Multi-Currency Checkout Support",
+      "ffsRaw": 22,
+      "iqsRaw": 88,
+      "pFail": 0.21,
+      "budget": 130000,
+      "actualOutcome": "SUCCESS",
+      "completedAt": "2026-01-05"
+    },
+    {
+      "id": "vr4",
+      "featureName": "Self-Service Invoice Portal",
+      "ffsRaw": 34,
+      "iqsRaw": 75,
+      "pFail": 0.31,
+      "budget": 75000,
+      "actualOutcome": "SUCCESS",
+      "completedAt": "2026-03-01"
+    },
+    {
+      "id": "vr5",
+      "featureName": "AI Code Autocomplete Plug",
+      "ffsRaw": 75,
+      "iqsRaw": 38,
+      "pFail": 0.89,
+      "budget": 220000,
+      "actualOutcome": "FAILURE",
+      "completedAt": "2025-08-20"
+    },
+    {
+      "id": "vr6",
+      "featureName": "One-Click Zapier Native Connect",
+      "ffsRaw": 48,
+      "iqsRaw": 60,
+      "pFail": 0.49,
+      "budget": 110000,
+      "actualOutcome": "ABANDONED",
+      "completedAt": "2025-12-14"
+    },
+    {
+      "id": "vr7",
+      "featureName": "User Profile Avatars Custom Generator",
+      "ffsRaw": 82,
+      "iqsRaw": 45,
+      "pFail": 0.94,
+      "budget": 45000,
+      "actualOutcome": "FAILURE",
+      "completedAt": "2025-09-02"
+    },
+    {
+      "id": "vr8",
+      "featureName": "Bulk Emailer Campaign Module",
+      "ffsRaw": 28,
+      "iqsRaw": 80,
+      "pFail": 0.26,
+      "budget": 140000,
+      "actualOutcome": "SUCCESS",
+      "completedAt": "2026-01-20"
+    },
+    {
+      "id": "vr9",
+      "featureName": "Legacy SOAP API Wrapper Service",
+      "ffsRaw": 62,
+      "iqsRaw": 48,
+      "pFail": 0.72,
+      "budget": 85000,
+      "actualOutcome": "FAILURE",
+      "completedAt": "2025-10-30"
+    },
+    {
+      "id": "vr10",
+      "featureName": "Interactive Dashboards Sandbox",
+      "ffsRaw": 40,
+      "iqsRaw": 70,
+      "pFail": 0.41,
+      "budget": 160000,
+      "actualOutcome": "SUCCESS",
+      "completedAt": "2026-04-18"
+    },
+    {
+      "id": "vr11",
+      "featureName": "Figma Direct Design Sync plug",
+      "ffsRaw": 68,
+      "iqsRaw": 52,
+      "pFail": 0.76,
+      "budget": 95000,
+      "actualOutcome": "FAILURE",
+      "completedAt": "2025-07-15"
+    },
+    {
+      "id": "vr12",
+      "featureName": "Real-Time Collaborative Canvas App",
+      "ffsRaw": 52,
+      "iqsRaw": 40,
+      "pFail": 0.58,
+      "budget": 300000,
+      "actualOutcome": "FAILURE",
+      "completedAt": "2025-06-20"
+    },
+    {
+      "id": "vr13",
+      "featureName": "Social Login Integration Gate",
+      "ffsRaw": 15,
+      "iqsRaw": 92,
+      "pFail": 0.13,
+      "budget": 50000,
+      "actualOutcome": "SUCCESS",
+      "completedAt": "2026-03-12"
+    },
+    {
+      "id": "vr14",
+      "featureName": "GDPR Compliance Legal Auto-auditor",
+      "ffsRaw": 38,
+      "iqsRaw": 82,
+      "pFail": 0.37,
+      "budget": 120000,
+      "actualOutcome": "SUCCESS",
+      "completedAt": "2026-05-01"
+    },
+    {
+      "id": "vr15",
+      "featureName": "SaaS Shared Team Inboxes Module",
+      "ffsRaw": 71,
+      "iqsRaw": 41,
+      "pFail": 0.83,
+      "budget": 175000,
+      "actualOutcome": "FAILURE",
+      "completedAt": "2025-05-18"
+    }
+  ],
+  "transcripts": [
+    {
+      "id": "tr_mqkw3wh8",
+      "featureName": "Excel Customer Importer Tool",
+      "transcriptText": "INTERVIEWER: How do you currently import external client databases into your operations terminal?\nCLIENT: It is a complete and absolute nightmare. Every Monday we receive raw Excel lists from 5 different field partners. The formatting is completely broken—some list names, others skip emails. I currently spend 4 hours every single Monday manually typing, copying, formatting, and correcting cell errors. I've literally begged my manager to hire a freelancer just for this.\nINTERVIEWER: Have you tried looking for software products to do this?\nCLIENT: Yes! I tried installing two different tools from the Web, but they failed because they didn't support our custom compliance schema. I actually paid $40 out of my own pocket for an imports plug-in last month but it kept crashing.\nINTERVIEWER: If we built a compliant custom importer where you drag and drop columns directly, what would that be worth to your squad?\nCLIENT: I would literally sign a Purchase Order today. We have a pre-approved budget of $12,000 annually for operations SaaS, and since this saves me 16 hours of grueling manual work every month, I can guarantee my director would approve the invoice on day one. We are desperate for this.",
+      "contradictions": [],
+      "politenessBiases": [],
+      "leadingQuestions": [],
+      "frictionGaps": [],
+      "narrativeSummary": "The customer displays exceptionally strong validation signals, having spent personal funds ($40) and attempted workarounds to solve a weekly, 4-hour painful task. The only notable risk is procurement authority, as the final SaaS purchasing power lies with the director rather than the interviewee. If the custom compliance schemas are met, this represents a highly viable product opportunity.",
+      "recommendedNextActions": [
+        {
+          "action": "Set up a joint meeting with the Director",
+          "description": "Request the customer to facilitate a brief call with their Director to confirm the pre-approved $12,000 budget and secure verbal alignment on purchasing terms once compliance requirements are met.",
+          "expectedRiskReduction": 45,
+          "difficulty": "medium",
+          "estimatedEffortHours": 4,
+          "id": "act_0_1781871204139"
+        },
+        {
+          "action": "Acquire custom compliance schema specifications",
+          "description": "Request the exact technical parameters of the custom compliance schema that caused previous web tools to fail, ensuring that the engineering team can support these rules in the MVP.",
+          "expectedRiskReduction": 35,
+          "difficulty": "low",
+          "estimatedEffortHours": 2,
+          "id": "act_1_1781871204139"
+        }
+      ],
+      "ffsRaw": 0,
+      "iqsRaw": 100,
+      "confidenceScore": 94,
+      "pFail": 0.03,
+      "budget": 65000,
+      "expectedLoss": 1950,
+      "recommendation": "VALIDATED_BUILD",
+      "createdAt": "2026-06-19T12:13:24.140Z"
+    },
+    {
+      "id": "tr_mqkw7evl",
+      "featureName": "Slack Real-Time Notifications Engine",
+      "transcriptText": "INTERVIEWER: How do you currently stay on top of critical server status failures?\nCLIENT: Right now, we get email alerts sent to our team alias. It is somewhat messy because people miss threads, which delays incident response by about an hour.\nINTERVIEWER: If we pushed these alerts directly as interactive Slack notifications, would that solve your incident delays?\nCLIENT: Yes, Slack is where we spend 90% of our active communication time. Pushing notifications directly into our #ops channel would certainly make the alerts highly visible and improve coordination.\nINTERVIEWER: Is that something your IT director would commit budget toward?\nCLIENT: Maybe at some point next summer. Alerts are important, but currently our core focus is upgrading database clusters, so getting Slack alerts is more of a 'nice-to-have' convenience rather than a blocker. We could probably live with emails for another year, but a Slack connector would definitely look neat and clean.",
+      "contradictions": [],
+      "politenessBiases": [
+        {
+          "id": "p_back_1",
+          "type": "politeness_bias",
+          "quote": "Alerts are important, but currently our core focus is upgrading database clusters, so getting Slack alerts is more of a 'nice-to-have' convenience rather than a blocker. We could probably live with emails for another year, but a Slack connector would definitely look neat and clean.",
+          "speaker": "customer",
+          "reason": "Vague non-committal soft consensus. Customer refers to the Slack engine as a 'nice-to-have' and says 'probably live with emails for another year'.",
+          "explanation": "Vague non-committal soft consensus. Customer refers to the Slack engine as a 'nice-to-have' and says 'probably live with emails for another year'.",
+          "confidence": 0.92,
+          "marker": "nice-to-have convenience",
+          "intensity": "strong"
+        }
+      ],
+      "leadingQuestions": [
+        {
+          "id": "l_back_1",
+          "type": "leading_question",
+          "quote": "If we pushed these alerts directly as interactive Slack notifications, would that solve your incident delays?",
+          "question": "If we pushed these alerts directly as interactive Slack notifications, would that solve your incident delays?",
+          "response": "Yes, Slack is where we spend 90% of our active communication time.",
+          "speaker": "interviewer",
+          "reason": "Interviewer hypothetical prompting. Prompts the customer with solution details instead of diagnosing database priority constraints first.",
+          "explanation": "Interviewer hypothetical prompting. Prompts the customer with solution details instead of diagnosing database priority constraints first.",
+          "confidence": 0.88,
+          "severity": "medium"
+        }
+      ],
+      "frictionGaps": [
+        {
+          "id": "f_back_1",
+          "type": "friction_gap",
+          "quote": "Slack is where we spend 90% of our active communication time. Pushing notifications directly into our #ops channel would certainly make the alerts highly visible",
+          "statedImportance": "Slack is where we spend 90% of active communication time, direct push would make alerts highly visible",
+          "actualBehaviorOrLackThereof": "Alerts are important, but currently our core focus is upgrading database clusters... We could probably live with emails for another year",
+          "speaker": "customer",
+          "reason": "Lack of immediate operational urgency and zero budget ownership priority. The team has active database priorities and will wait a year.",
+          "explanation": "Lack of immediate operational urgency and zero budget ownership priority. The team has active database priorities and will wait a year.",
+          "confidence": 0.94,
+          "gapScore": 6
+        }
+      ],
+      "ffsRaw": 38,
+      "iqsRaw": 79,
+      "narrativeSummary": "FaultLine evaluated the transcript for 'Slack Real-Time Notifications Engine'. We uncovered multiple credibility gaps. The customer states extreme willingness to adopt, but contradicts this with a complete dependency on spreadsheets (0 structural contradictions). Politeness markers indicate polite, soft consensus rather than urgent demand, and the interviewer utilized several high-severity leading prompts instead of letting discovery happen naturally.",
+      "recommendedNextActions": [
+        {
+          "id": "act1",
+          "action": "Conduct willingness-to-pay validation",
+          "description": "Ask the customer to sign a non-binding Letter of Intent (LOI) to pay $x/month before writing any codebase lines.",
+          "expectedRiskReduction": 18,
+          "difficulty": "medium",
+          "estimatedEffortHours": 4
+        },
+        {
+          "id": "act2",
+          "action": "Observe natural workflow directly",
+          "description": "Schedule a screen-share session to watch the client manually accomplish their task in Excel today. Document every single friction microstep.",
+          "expectedRiskReduction": 22,
+          "difficulty": "low",
+          "estimatedEffortHours": 3
+        },
+        {
+          "id": "act3",
+          "action": "Interview 3 alternative non-biased admins",
+          "description": "Interview other target administrators without presenting the visual prototypes to verify if the core operations issue organically surfaces.",
+          "expectedRiskReduction": 15,
+          "difficulty": "high",
+          "estimatedEffortHours": 8
+        }
+      ],
+      "confidenceScore": 85,
+      "pFail": 0.39,
+      "budget": 120000,
+      "expectedLoss": 46800,
+      "recommendation": "CONDITIONAL_REVIEW",
+      "createdAt": "2026-06-19T12:16:07.953Z"
+    },
+    {
+      "id": "tr_mqkwdctc",
+      "featureName": "Slack Real-Time Notifications Engine",
+      "transcriptText": "INTERVIEWER: How do you currently stay on top of critical server status failures?\nCLIENT: Right now, we get email alerts sent to our team alias. It is somewhat messy because people miss threads, which delays incident response by about an hour.\nINTERVIEWER: If we pushed these alerts directly as interactive Slack notifications, would that solve your incident delays?\nCLIENT: Yes, Slack is where we spend 90% of our active communication time. Pushing notifications directly into our #ops channel would certainly make the alerts highly visible and improve coordination.\nINTERVIEWER: Is that something your IT director would commit budget toward?\nCLIENT: Maybe at some point next summer. Alerts are important, but currently our core focus is upgrading database clusters, so getting Slack alerts is more of a 'nice-to-have' convenience rather than a blocker. We could probably live with emails for another year, but a Slack connector would definitely look neat and clean.",
+      "contradictions": [],
+      "politenessBiases": [
+        {
+          "id": "p_back_1",
+          "type": "politeness_bias",
+          "quote": "Alerts are important, but currently our core focus is upgrading database clusters, so getting Slack alerts is more of a 'nice-to-have' convenience rather than a blocker. We could probably live with emails for another year, but a Slack connector would definitely look neat and clean.",
+          "speaker": "customer",
+          "reason": "Vague non-committal soft consensus. Customer refers to the Slack engine as a 'nice-to-have' and says 'probably live with emails for another year'.",
+          "explanation": "Vague non-committal soft consensus. Customer refers to the Slack engine as a 'nice-to-have' and says 'probably live with emails for another year'.",
+          "confidence": 0.92,
+          "marker": "nice-to-have convenience",
+          "intensity": "strong"
+        }
+      ],
+      "leadingQuestions": [
+        {
+          "id": "l_back_1",
+          "type": "leading_question",
+          "quote": "If we pushed these alerts directly as interactive Slack notifications, would that solve your incident delays?",
+          "question": "If we pushed these alerts directly as interactive Slack notifications, would that solve your incident delays?",
+          "response": "Yes, Slack is where we spend 90% of our active communication time.",
+          "speaker": "interviewer",
+          "reason": "Interviewer hypothetical prompting. Prompts the customer with solution details instead of diagnosing database priority constraints first.",
+          "explanation": "Interviewer hypothetical prompting. Prompts the customer with solution details instead of diagnosing database priority constraints first.",
+          "confidence": 0.88,
+          "severity": "medium"
+        }
+      ],
+      "frictionGaps": [
+        {
+          "id": "f_back_1",
+          "type": "friction_gap",
+          "quote": "Slack is where we spend 90% of our active communication time. Pushing notifications directly into our #ops channel would certainly make the alerts highly visible",
+          "statedImportance": "Slack is where we spend 90% of active communication time, direct push would make alerts highly visible",
+          "actualBehaviorOrLackThereof": "Alerts are important, but currently our core focus is upgrading database clusters... We could probably live with emails for another year",
+          "speaker": "customer",
+          "reason": "Lack of immediate operational urgency and zero budget ownership priority. The team has active database priorities and will wait a year.",
+          "explanation": "Lack of immediate operational urgency and zero budget ownership priority. The team has active database priorities and will wait a year.",
+          "confidence": 0.94,
+          "gapScore": 6
+        }
+      ],
+      "ffsRaw": 38,
+      "iqsRaw": 79,
+      "narrativeSummary": "FaultLine evaluated the transcript for 'Slack Real-Time Notifications Engine'. We uncovered multiple credibility gaps. The customer states extreme willingness to adopt, but contradicts this with a complete dependency on spreadsheets (0 structural contradictions). Politeness markers indicate polite, soft consensus rather than urgent demand, and the interviewer utilized several high-severity leading prompts instead of letting discovery happen naturally.",
+      "recommendedNextActions": [
+        {
+          "id": "act1",
+          "action": "Conduct willingness-to-pay validation",
+          "description": "Ask the customer to sign a non-binding Letter of Intent (LOI) to pay $x/month before writing any codebase lines.",
+          "expectedRiskReduction": 18,
+          "difficulty": "medium",
+          "estimatedEffortHours": 4
+        },
+        {
+          "id": "act2",
+          "action": "Observe natural workflow directly",
+          "description": "Schedule a screen-share session to watch the client manually accomplish their task in Excel today. Document every single friction microstep.",
+          "expectedRiskReduction": 22,
+          "difficulty": "low",
+          "estimatedEffortHours": 3
+        },
+        {
+          "id": "act3",
+          "action": "Interview 3 alternative non-biased admins",
+          "description": "Interview other target administrators without presenting the visual prototypes to verify if the core operations issue organically surfaces.",
+          "expectedRiskReduction": 15,
+          "difficulty": "high",
+          "estimatedEffortHours": 8
+        }
+      ],
+      "confidenceScore": 85,
+      "pFail": 0.39,
+      "budget": 120000,
+      "expectedLoss": 46800,
+      "recommendation": "CONDITIONAL_REVIEW",
+      "createdAt": "2026-06-19T12:20:45.216Z"
+    },
+    {
+      "id": "tr_mqkwdg2h",
+      "featureName": "Excel Customer Importer Tool",
+      "transcriptText": "INTERVIEWER: How do you currently import external client databases into your operations terminal?\nCLIENT: It is a complete and absolute nightmare. Every Monday we receive raw Excel lists from 5 different field partners. The formatting is completely broken—some list names, others skip emails. I currently spend 4 hours every single Monday manually typing, copying, formatting, and correcting cell errors. I've literally begged my manager to hire a freelancer just for this.\nINTERVIEWER: Have you tried looking for software products to do this?\nCLIENT: Yes! I tried installing two different tools from the Web, but they failed because they didn't support our custom compliance schema. I actually paid $40 out of my own pocket for an imports plug-in last month but it kept crashing.\nINTERVIEWER: If we built a compliant custom importer where you drag and drop columns directly, what would that be worth to your squad?\nCLIENT: I would literally sign a Purchase Order today. We have a pre-approved budget of $12,000 annually for operations SaaS, and since this saves me 16 hours of grueling manual work every month, I can guarantee my director would approve the invoice on day one. We are desperate for this.",
+      "contradictions": [],
+      "politenessBiases": [],
+      "leadingQuestions": [],
+      "frictionGaps": [],
+      "ffsRaw": 0,
+      "iqsRaw": 100,
+      "narrativeSummary": "FaultLine evaluated the transcript for 'Excel Customer Importer Tool'. We uncovered multiple credibility gaps. The customer states extreme willingness to adopt, but contradicts this with a complete dependency on spreadsheets (0 structural contradictions). Politeness markers indicate polite, soft consensus rather than urgent demand, and the interviewer utilized several high-severity leading prompts instead of letting discovery happen naturally.",
+      "recommendedNextActions": [
+        {
+          "id": "act1",
+          "action": "Conduct willingness-to-pay validation",
+          "description": "Ask the customer to sign a non-binding Letter of Intent (LOI) to pay $x/month before writing any codebase lines.",
+          "expectedRiskReduction": 18,
+          "difficulty": "medium",
+          "estimatedEffortHours": 4
+        },
+        {
+          "id": "act2",
+          "action": "Observe natural workflow directly",
+          "description": "Schedule a screen-share session to watch the client manually accomplish their task in Excel today. Document every single friction microstep.",
+          "expectedRiskReduction": 22,
+          "difficulty": "low",
+          "estimatedEffortHours": 3
+        },
+        {
+          "id": "act3",
+          "action": "Interview 3 alternative non-biased admins",
+          "description": "Interview other target administrators without presenting the visual prototypes to verify if the core operations issue organically surfaces.",
+          "expectedRiskReduction": 15,
+          "difficulty": "high",
+          "estimatedEffortHours": 8
+        }
+      ],
+      "confidenceScore": 85,
+      "pFail": 0.03,
+      "budget": 65000,
+      "expectedLoss": 1950,
+      "recommendation": "VALIDATED_BUILD",
+      "createdAt": "2026-06-19T12:20:49.433Z"
+    },
+    {
+      "id": "tr_mqkyd0vy",
+      "featureName": "Excel Customer Importer Tool",
+      "transcriptText": "INTERVIEWER: How do you currently import external client databases into your operations terminal?\nCLIENT: It is a complete and absolute nightmare. Every Monday we receive raw Excel lists from 5 different field partners. The formatting is completely broken—some list names, others skip emails. I currently spend 4 hours every single Monday manually typing, copying, formatting, and correcting cell errors. I've literally begged my manager to hire a freelancer just for this.\nINTERVIEWER: Have you tried looking for software products to do this?\nCLIENT: Yes! I tried installing two different tools from the Web, but they failed because they didn't support our custom compliance schema. I actually paid $40 out of my own pocket for an imports plug-in last month but it kept crashing.\nINTERVIEWER: If we built a compliant custom importer where you drag and drop columns directly, what would that be worth to your squad?\nCLIENT: I would literally sign a Purchase Order today. We have a pre-approved budget of $12,000 annually for operations SaaS, and since this saves me 16 hours of grueling manual work every month, I can guarantee my director would approve the invoice on day one. We are desperate for this.",
+      "contradictions": [],
+      "politenessBiases": [],
+      "leadingQuestions": [
+        {
+          "type": "leading_question",
+          "quote": "If we built a compliant custom importer where you drag and drop columns directly, what would that be worth to your squad?",
+          "question": "If we built a compliant custom importer where you drag and drop columns directly, what would that be worth to your squad?",
+          "response": "I would literally sign a Purchase Order today. We have a pre-approved budget of $12,000 annually for operations SaaS, and since this saves me 16 hours of grueling manual work every month, I can guarantee my director would approve the invoice on day one. We are desperate for this.",
+          "speaker": "interviewer",
+          "reason": "The interviewer introduces a specific hypothetical solution design ('drag and drop columns directly') rather than letting the customer define their ideal workflow, which slightly anchors the valuation to a hypothetical scenario.",
+          "explanation": "The interviewer introduces a specific hypothetical solution design ('drag and drop columns directly') rather than letting the customer define their ideal workflow, which slightly anchors the valuation to a hypothetical scenario.",
+          "confidence": 0.7,
+          "severity": "low",
+          "id": "l_0_1781874988989"
+        }
+      ],
+      "frictionGaps": [],
+      "narrativeSummary": "This interview is an exceptionally strong and high-quality signal for product validation. The user demonstrates real pain with quantified weekly loss (4 hours/week), active searching for software alternatives, and actual out-of-pocket spending behavior ($40). The primary risk is a minor decision-maker gap (the user cannot sign the PO themselves, requiring their director's approval) and potential technical friction regarding their custom compliance schema which has caused past software tools to fail.",
+      "recommendedNextActions": [
+        {
+          "action": "Interview the Director / Economic Buyer",
+          "description": "Schedule a brief discussion with the client's director to validate their willingness to allocate the pre-approved $12k budget specifically to resolve this compliance import problem.",
+          "expectedRiskReduction": 35,
+          "difficulty": "low",
+          "estimatedEffortHours": 2,
+          "id": "act_0_1781874988989"
+        },
+        {
+          "action": "Request Custom Schema Samples",
+          "description": "Obtain a sanitized sample of their custom compliance schema and raw Excel files to run a feasibility analysis, ensuring your technical solution will not fail like the prior tools they purchased.",
+          "expectedRiskReduction": 50,
+          "difficulty": "medium",
+          "estimatedEffortHours": 4,
+          "id": "act_1_1781874988989"
+        }
+      ],
+      "ffsRaw": 0,
+      "iqsRaw": 100,
+      "confidenceScore": 87,
+      "pFail": 0.03,
+      "budget": 65000,
+      "expectedLoss": 1950,
+      "recommendation": "VALIDATED_BUILD",
+      "createdAt": "2026-06-19T13:16:28.990Z"
+    },
+    {
+      "id": "tr_mqkyivtf",
+      "featureName": "Slack Real-Time Notifications Engine",
+      "transcriptText": "INTERVIEWER: How do you currently stay on top of critical server status failures?\nCLIENT: Right now, we get email alerts sent to our team alias. It is somewhat messy because people miss threads, which delays incident response by about an hour.\nINTERVIEWER: If we pushed these alerts directly as interactive Slack notifications, would that solve your incident delays?\nCLIENT: Yes, Slack is where we spend 90% of our active communication time. Pushing notifications directly into our #ops channel would certainly make the alerts highly visible and improve coordination.\nINTERVIEWER: Is that something your IT director would commit budget toward?\nCLIENT: Maybe at some point next summer. Alerts are important, but currently our core focus is upgrading database clusters, so getting Slack alerts is more of a 'nice-to-have' convenience rather than a blocker. We could probably live with emails for another year, but a Slack connector would definitely look neat and clean.",
+      "contradictions": [],
+      "politenessBiases": [
+        {
+          "id": "p_back_1",
+          "type": "politeness_bias",
+          "quote": "Alerts are important, but currently our core focus is upgrading database clusters, so getting Slack alerts is more of a 'nice-to-have' convenience rather than a blocker. We could probably live with emails for another year, but a Slack connector would definitely look neat and clean.",
+          "speaker": "customer",
+          "reason": "Vague non-committal soft consensus. Customer refers to the Slack engine as a 'nice-to-have' and says 'probably live with emails for another year'.",
+          "explanation": "Vague non-committal soft consensus. Customer refers to the Slack engine as a 'nice-to-have' and says 'probably live with emails for another year'.",
+          "confidence": 0.92,
+          "marker": "nice-to-have convenience",
+          "intensity": "strong"
+        }
+      ],
+      "leadingQuestions": [
+        {
+          "id": "l_back_1",
+          "type": "leading_question",
+          "quote": "If we pushed these alerts directly as interactive Slack notifications, would that solve your incident delays?",
+          "question": "If we pushed these alerts directly as interactive Slack notifications, would that solve your incident delays?",
+          "response": "Yes, Slack is where we spend 90% of our active communication time.",
+          "speaker": "interviewer",
+          "reason": "Interviewer hypothetical prompting. Prompts the customer with solution details instead of diagnosing database priority constraints first.",
+          "explanation": "Interviewer hypothetical prompting. Prompts the customer with solution details instead of diagnosing database priority constraints first.",
+          "confidence": 0.88,
+          "severity": "medium"
+        }
+      ],
+      "frictionGaps": [
+        {
+          "id": "f_back_1",
+          "type": "friction_gap",
+          "quote": "Slack is where we spend 90% of our active communication time. Pushing notifications directly into our #ops channel would certainly make the alerts highly visible",
+          "statedImportance": "Slack is where we spend 90% of active communication time, direct push would make alerts highly visible",
+          "actualBehaviorOrLackThereof": "Alerts are important, but currently our core focus is upgrading database clusters... We could probably live with emails for another year",
+          "speaker": "customer",
+          "reason": "Lack of immediate operational urgency and zero budget ownership priority. The team has active database priorities and will wait a year.",
+          "explanation": "Lack of immediate operational urgency and zero budget ownership priority. The team has active database priorities and will wait a year.",
+          "confidence": 0.94,
+          "gapScore": 6
+        }
+      ],
+      "ffsRaw": 38,
+      "iqsRaw": 79,
+      "narrativeSummary": "FaultLine evaluated the transcript for 'Slack Real-Time Notifications Engine'. We uncovered multiple credibility gaps. The customer states extreme willingness to adopt, but contradicts this with a complete dependency on spreadsheets (0 structural contradictions). Politeness markers indicate polite, soft consensus rather than urgent demand, and the interviewer utilized several high-severity leading prompts instead of letting discovery happen naturally.",
+      "recommendedNextActions": [
+        {
+          "id": "act1",
+          "action": "Conduct willingness-to-pay validation",
+          "description": "Ask the customer to sign a non-binding Letter of Intent (LOI) to pay $x/month before writing any codebase lines.",
+          "expectedRiskReduction": 18,
+          "difficulty": "medium",
+          "estimatedEffortHours": 4
+        },
+        {
+          "id": "act2",
+          "action": "Observe natural workflow directly",
+          "description": "Schedule a screen-share session to watch the client manually accomplish their task in Excel today. Document every single friction microstep.",
+          "expectedRiskReduction": 22,
+          "difficulty": "low",
+          "estimatedEffortHours": 3
+        },
+        {
+          "id": "act3",
+          "action": "Interview 3 alternative non-biased admins",
+          "description": "Interview other target administrators without presenting the visual prototypes to verify if the core operations issue organically surfaces.",
+          "expectedRiskReduction": 15,
+          "difficulty": "high",
+          "estimatedEffortHours": 8
+        }
+      ],
+      "confidenceScore": 85,
+      "pFail": 0.39,
+      "budget": 120000,
+      "expectedLoss": 46800,
+      "recommendation": "CONDITIONAL_REVIEW",
+      "createdAt": "2026-06-19T13:21:02.355Z"
+    },
+    {
+      "id": "tr_mqkz7ww2",
+      "featureName": "Excel Customer Importer Tool",
+      "transcriptText": "INTERVIEWER: How do you currently import external client databases into your operations terminal?\nCLIENT: It is a complete and absolute nightmare. Every Monday we receive raw Excel lists from 5 different field partners. The formatting is completely broken—some list names, others skip emails. I currently spend 4 hours every single Monday manually typing, copying, formatting, and correcting cell errors. I've literally begged my manager to hire a freelancer just for this.\nINTERVIEWER: Have you tried looking for software products to do this?\nCLIENT: Yes! I tried installing two different tools from the Web, but they failed because they didn't support our custom compliance schema. I actually paid $40 out of my own pocket for an imports plug-in last month but it kept crashing.\nINTERVIEWER: If we built a compliant custom importer where you drag and drop columns directly, what would that be worth to your squad?\nCLIENT: I would literally sign a Purchase Order today. We have a pre-approved budget of $12,000 annually for operations SaaS, and since this saves me 16 hours of grueling manual work every month, I can guarantee my director would approve the invoice on day one. We are desperate for this.",
+      "contradictions": [],
+      "politenessBiases": [],
+      "leadingQuestions": [
+        {
+          "type": "leading_question",
+          "quote": "If we built a compliant custom importer where you drag and drop columns directly, what would that be worth to your squad?",
+          "question": "If we built a compliant custom importer where you drag and drop columns directly, what would that be worth to your squad?",
+          "response": "I would literally sign a Purchase Order today. We have a pre-approved budget of $12,000 annually for operations SaaS, and since this saves me 16 hours of grueling manual work every month, I can guarantee my director would approve the invoice on day one. We are desperate for this.",
+          "speaker": "interviewer",
+          "reason": "The interviewer pitches a hypothetical solution featuring a specific implementation detail (drag-and-drop columns) rather than eliciting the customer's own vision of a solution, creating hypothetical validation bias.",
+          "explanation": "The interviewer pitches a hypothetical solution featuring a specific implementation detail (drag-and-drop columns) rather than eliciting the customer's own vision of a solution, creating hypothetical validation bias.",
+          "confidence": 0.8,
+          "severity": "medium",
+          "id": "l_0_1781876430145"
+        }
+      ],
+      "frictionGaps": [],
+      "narrativeSummary": "The client validates an extremely intense operational pain point with clear past behavior (spending 4 hours every Monday, trying multiple alternative tools, and paying out-of-pocket). However, a key risk exists in the alignment between the end-user and the ultimate buying authority: the client's past plea for a freelancer was unheeded by management. Additionally, the interviewer relied on a hypothetical product feature pitch ('drag and drop columns') rather than digging deeper into the specific compliance configurations that caused past software tools to fail.",
+      "recommendedNextActions": [
+        {
+          "action": "Verify Budget with Decision Maker",
+          "description": "Conduct a brief customer discovery call with the client's manager or operations director to confirm if they are prepared to authorize a $12k/year SaaS tool to solve this manual onboarding task.",
+          "expectedRiskReduction": 45,
+          "difficulty": "medium",
+          "estimatedEffortHours": 4,
+          "id": "act_0_1781876430145"
+        },
+        {
+          "action": "Perform Tech-Spike on Custom Compliance Schema",
+          "description": "Ask the client to supply a dummy template or documentation of the custom compliance schema requirements to ensure your custom importer can successfully ingest their files where previous plugins failed.",
+          "expectedRiskReduction": 30,
+          "difficulty": "low",
+          "estimatedEffortHours": 6,
+          "id": "act_1_1781876430145"
+        }
+      ],
+      "ffsRaw": 0,
+      "iqsRaw": 98,
+      "confidenceScore": 91,
+      "pFail": 0.03,
+      "budget": 65000,
+      "expectedLoss": 1950,
+      "recommendation": "VALIDATED_BUILD",
+      "createdAt": "2026-06-19T13:40:30.146Z"
+    },
+    {
+      "id": "tr_mqkzpm70",
+      "featureName": "Excel Customer Importer Tool",
+      "transcriptText": "INTERVIEWER: How do you currently import external client databases into your operations terminal?\nCLIENT: It is a complete and absolute nightmare. Every Monday we receive raw Excel lists from 5 different field partners. The formatting is completely broken—some list names, others skip emails. I currently spend 4 hours every single Monday manually typing, copying, formatting, and correcting cell errors. I've literally begged my manager to hire a freelancer just for this.\nINTERVIEWER: Have you tried looking for software products to do this?\nCLIENT: Yes! I tried installing two different tools from the Web, but they failed because they didn't support our custom compliance schema. I actually paid $40 out of my own pocket for an imports plug-in last month but it kept crashing.\nINTERVIEWER: If we built a compliant custom importer where you drag and drop columns directly, what would that be worth to your squad?\nCLIENT: I would literally sign a Purchase Order today. We have a pre-approved budget of $12,000 annually for operations SaaS, and since this saves me 16 hours of grueling manual work every month, I can guarantee my director would approve the invoice on day one. We are desperate for this.",
+      "contradictions": [],
+      "politenessBiases": [],
+      "leadingQuestions": [
+        {
+          "type": "leading_question",
+          "quote": "If we built a compliant custom importer where you drag and drop columns directly, what would that be worth to your squad?",
+          "question": "If we built a compliant custom importer where you drag and drop columns directly, what would that be worth to your squad?",
+          "response": "I would literally sign a Purchase Order today. We have a pre-approved budget of $12,000 annually for operations SaaS, and since this saves me 16 hours of grueling manual work every month, I can guarantee my director would approve the invoice on day one. We are desperate for this.",
+          "speaker": "interviewer",
+          "reason": "The interviewer prompts the customer with a hypothetical solution ('drag and drop columns') and asks for a valuation, which nudges the customer to make non-binding financial promises about unbuilt software.",
+          "explanation": "The interviewer prompts the customer with a hypothetical solution ('drag and drop columns') and asks for a valuation, which nudges the customer to make non-binding financial promises about unbuilt software.",
+          "confidence": 0.8,
+          "severity": "medium",
+          "id": "l_0_1781877256091"
+        }
+      ],
+      "frictionGaps": [],
+      "narrativeSummary": "This interview reveals an exceptionally high-intent customer who is actively suffering from a severe, frequent operational workflow pain (spending 4 hours every Monday manually resolving formatting issues). The client provides concrete proof of past behavior to solve the problem, including trying two alternative solutions and spending $40 of their own money on a failing plugin. The risk of politeness bias or false-positive pain is extremely low. However, a decision-maker gap exists: while the user asserts they can guarantee approval due to a pre-approved $12,000 SaaS budget, the actual purchase requires their director's signature.",
+      "recommendedNextActions": [
+        {
+          "action": "Conduct a brief validation session with the Director.",
+          "description": "Have the current interviewee introduce you to their director to confirm the pre-approved $12,000 operations budget and verify the director's willingness to approve an invoice for an import-automation tool.",
+          "expectedRiskReduction": 40,
+          "difficulty": "medium",
+          "estimatedEffortHours": 3,
+          "id": "act_0_1781877256091"
+        }
+      ],
+      "ffsRaw": 0,
+      "iqsRaw": 98,
+      "confidenceScore": 82,
+      "pFail": 0.03,
+      "budget": 65000,
+      "expectedLoss": 1950,
+      "recommendation": "VALIDATED_BUILD",
+      "createdAt": "2026-06-19T13:54:16.092Z"
+    },
+    {
+      "id": "tr_mqkzr99x",
+      "featureName": "Excel Customer Importer Tool",
+      "transcriptText": "INTERVIEWER: How do you currently import external client databases into your operations terminal?\nCLIENT: It is a complete and absolute nightmare. Every Monday we receive raw Excel lists from 5 different field partners. The formatting is completely broken—some list names, others skip emails. I currently spend 4 hours every single Monday manually typing, copying, formatting, and correcting cell errors. I've literally begged my manager to hire a freelancer just for this.\nINTERVIEWER: Have you tried looking for software products to do this?\nCLIENT: Yes! I tried installing two different tools from the Web, but they failed because they didn't support our custom compliance schema. I actually paid $40 out of my own pocket for an imports plug-in last month but it kept crashing.\nINTERVIEWER: If we built a compliant custom importer where you drag and drop columns directly, what would that be worth to your squad?\nCLIENT: I would literally sign a Purchase Order today. We have a pre-approved budget of $12,000 annually for operations SaaS, and since this saves me 16 hours of grueling manual work every month, I can guarantee my director would approve the invoice on day one. We are desperate for this.",
+      "contradictions": [],
+      "politenessBiases": [],
+      "leadingQuestions": [],
+      "frictionGaps": [],
+      "ffsRaw": 0,
+      "iqsRaw": 100,
+      "narrativeSummary": "FaultLine evaluated the transcript for 'Excel Customer Importer Tool'. We uncovered multiple credibility gaps. The customer states extreme willingness to adopt, but contradicts this with a complete dependency on spreadsheets (0 structural contradictions). Politeness markers indicate polite, soft consensus rather than urgent demand, and the interviewer utilized several high-severity leading prompts instead of letting discovery happen naturally.",
+      "recommendedNextActions": [
+        {
+          "id": "act1",
+          "action": "Conduct willingness-to-pay validation",
+          "description": "Ask the customer to sign a non-binding Letter of Intent (LOI) to pay $x/month before writing any codebase lines.",
+          "expectedRiskReduction": 18,
+          "difficulty": "medium",
+          "estimatedEffortHours": 4
+        },
+        {
+          "id": "act2",
+          "action": "Observe natural workflow directly",
+          "description": "Schedule a screen-share session to watch the client manually accomplish their task in Excel today. Document every single friction microstep.",
+          "expectedRiskReduction": 22,
+          "difficulty": "low",
+          "estimatedEffortHours": 3
+        },
+        {
+          "id": "act3",
+          "action": "Interview 3 alternative non-biased admins",
+          "description": "Interview other target administrators without presenting the visual prototypes to verify if the core operations issue organically surfaces.",
+          "expectedRiskReduction": 15,
+          "difficulty": "high",
+          "estimatedEffortHours": 8
+        }
+      ],
+      "confidenceScore": 85,
+      "pFail": 0.03,
+      "budget": 65000,
+      "expectedLoss": 1950,
+      "recommendation": "VALIDATED_BUILD",
+      "createdAt": "2026-06-19T13:55:32.661Z"
+    },
+    {
+      "id": "tr_mqkzveyi",
+      "featureName": "AI Auto-Summarized Transcripts",
+      "transcriptText": "INTERVIEWER: Thanks for taking the time today! Wouldn't it be highly helpful if we consolidated all of your raw chat panels into a single premium AI portal that auto-extracted key highlights?\nCLIENT: Oh yeah, absolutely. That sounds really interesting and neat! I think my teammates would enjoy playing with that twice a month. Nice work!\nINTERVIEWER: That is fantastic to hear. If we built this, would you migrate all of your tracking protocols over by next quarter?\nCLIENT: Yes, that looks very elegant and convenient. I'm sure my VP would love to look at it when they review compliance budgets next fiscal year.\nINTERVIEWER: Awesome. How do you solve this summarization problem today?\nCLIENT: Well, we don't really have any budget allocated to do any custom work on this right now. We currently just copy-paste the direct text into an Excel sheet and a shared team chat, which takes about 5 minutes once a month. Honestly, Excel does everything we need for forecasting, so we're completely fine.\nINTERVIEWER: Don't you think having an automatic dashboard here would save you all that clicking?\nCLIENT: Yeah, definitely, clicking is annoying.",
+      "contradictions": [
+        {
+          "id": "c_back_1",
+          "type": "contradiction",
+          "quote": "Quote 1: 'Oh yeah, absolutely. That sounds really interesting and neat!' | Quote 2: 'Honestly, Excel does everything we need for forecasting, so we're completely fine.'",
+          "quote1": "Oh yeah, absolutely. That sounds really interesting and neat!",
+          "quote2": "Honestly, Excel does everything we need for forecasting, so we're completely fine.",
+          "speaker": "customer",
+          "reason": "Strategic contradiction: The client initially agrees the automated premium AI portal would be highly helpful, but later explicitly states that Excel does everything they need and they are completely fine.",
+          "explanation": "Strategic contradiction: The client initially agrees the automated premium AI portal would be highly helpful, but later explicitly states that Excel does everything they need and they are completely fine.",
+          "confidence": 0.95,
+          "severity": "high"
+        }
+      ],
+      "politenessBiases": [
+        {
+          "id": "p_back_1",
+          "type": "politeness_bias",
+          "quote": "Oh yeah, absolutely. That sounds really interesting and neat! I think my teammates would enjoy playing with that twice a month. Nice work!",
+          "speaker": "customer",
+          "reason": "Passive approval marker: Customer uses speculative soft terms ('sounds really interesting', 'neat', 'would enjoy play with') and indicates very low frequency usage of twice a month.",
+          "explanation": "Passive approval marker: Customer uses speculative soft terms ('sounds really interesting', 'neat', 'would enjoy play with') and indicates very low frequency usage of twice a month.",
+          "confidence": 0.92,
+          "marker": "sounds really interesting",
+          "intensity": "moderate"
+        },
+        {
+          "id": "p_back_2",
+          "type": "politeness_bias",
+          "quote": "Yes, that looks very elegant and convenient.",
+          "speaker": "customer",
+          "reason": "Esthetic compliment. The customer is praising visual aesthetics ('looks very elegant') rather than stating direct functional workflow necessity.",
+          "explanation": "Esthetic compliment. The customer is praising visual aesthetics ('looks very elegant') rather than stating direct functional workflow necessity.",
+          "confidence": 0.9,
+          "marker": "looks very elegant",
+          "intensity": "moderate"
+        }
+      ],
+      "leadingQuestions": [
+        {
+          "id": "l_back_1",
+          "type": "leading_question",
+          "quote": "Wouldn't it be highly helpful if we consolidated all of your raw chat panels into a single premium AI portal that auto-extracted key highlights?",
+          "question": "Wouldn't it be highly helpful if we consolidated all of your raw chat panels into a single premium AI portal that auto-extracted key highlights?",
+          "response": "Oh yeah, absolutely. That sounds really interesting and neat! I think my teammates would enjoy playing with that twice a month.",
+          "speaker": "interviewer",
+          "reason": "Severe interviewer confirmation bias. Reaching for automatic agreement by framing the proposal as 'highly helpful' which traps the customer.",
+          "explanation": "Severe interviewer confirmation bias. Reaching for automatic agreement by framing the proposal as 'highly helpful' which traps the customer.",
+          "confidence": 0.96,
+          "severity": "high"
+        },
+        {
+          "id": "l_back_2",
+          "type": "leading_question",
+          "quote": "Don't you think having an automatic dashboard here would save you all that clicking?",
+          "question": "Don't you think having an automatic dashboard here would save you all that clicking?",
+          "response": "Yeah, definitely, clicking is annoying.",
+          "speaker": "interviewer",
+          "reason": "Loaded lead question. Pushes the customer into submissive consensus by focusing on an annoying manual action ('clicking').",
+          "explanation": "Loaded lead question. Pushes the customer into submissive consensus by focusing on an annoying manual action ('clicking').",
+          "confidence": 0.94,
+          "severity": "medium"
+        }
+      ],
+      "frictionGaps": [
+        {
+          "id": "f_back_1",
+          "type": "friction_gap",
+          "quote": "Oh yeah, absolutely. That sounds really interesting and neat!",
+          "statedImportance": "Oh yeah, absolutely. That sounds really interesting and neat!",
+          "actualBehaviorOrLackThereof": "Well, we don't really have any budget allocated to do any custom work on this right now. We currently just copy-paste the direct text into an Excel sheet and a shared team chat, which takes about 5 minutes once a month.",
+          "speaker": "customer",
+          "reason": "No budget ownership, no urgency, and extremely low frequency (5 minutes once a month). The customer states excitement but their current behavior lacks all operational importance.",
+          "explanation": "No budget ownership, no urgency, and extremely low frequency (5 minutes once a month). The customer states excitement but their current behavior lacks all operational importance.",
+          "confidence": 0.95,
+          "gapScore": 9
+        }
+      ],
+      "ffsRaw": 55,
+      "iqsRaw": 45,
+      "narrativeSummary": "FaultLine evaluated the transcript for 'AI Auto-Summarized Transcripts'. We uncovered multiple credibility gaps. The customer states extreme willingness to adopt, but contradicts this with a complete dependency on spreadsheets (1 structural contradictions). Politeness markers indicate polite, soft consensus rather than urgent demand, and the interviewer utilized several high-severity leading prompts instead of letting discovery happen naturally.",
+      "recommendedNextActions": [
+        {
+          "id": "act1",
+          "action": "Conduct willingness-to-pay validation",
+          "description": "Ask the customer to sign a non-binding Letter of Intent (LOI) to pay $x/month before writing any codebase lines.",
+          "expectedRiskReduction": 18,
+          "difficulty": "medium",
+          "estimatedEffortHours": 4
+        },
+        {
+          "id": "act2",
+          "action": "Observe natural workflow directly",
+          "description": "Schedule a screen-share session to watch the client manually accomplish their task in Excel today. Document every single friction microstep.",
+          "expectedRiskReduction": 22,
+          "difficulty": "low",
+          "estimatedEffortHours": 3
+        },
+        {
+          "id": "act3",
+          "action": "Interview 3 alternative non-biased admins",
+          "description": "Interview other target administrators without presenting the visual prototypes to verify if the core operations issue organically surfaces.",
+          "expectedRiskReduction": 15,
+          "difficulty": "high",
+          "estimatedEffortHours": 8
+        }
+      ],
+      "confidenceScore": 85,
+      "pFail": 0.71,
+      "budget": 150000,
+      "expectedLoss": 106500,
+      "recommendation": "HALT_ALLOCATION",
+      "createdAt": "2026-06-19T13:58:46.650Z"
+    },
+    {
+      "id": "tr_mql03i75",
+      "featureName": "Slack Real-Time Notifications Engine",
+      "transcriptText": "INTERVIEWER: How do you currently stay on top of critical server status failures?\nCLIENT: Right now, we get email alerts sent to our team alias. It is somewhat messy because people miss threads, which delays incident response by about an hour.\nINTERVIEWER: If we pushed these alerts directly as interactive Slack notifications, would that solve your incident delays?\nCLIENT: Yes, Slack is where we spend 90% of our active communication time. Pushing notifications directly into our #ops channel would certainly make the alerts highly visible and improve coordination.\nINTERVIEWER: Is that something your IT director would commit budget toward?\nCLIENT: Maybe at some point next summer. Alerts are important, but currently our core focus is upgrading database clusters, so getting Slack alerts is more of a 'nice-to-have' convenience rather than a blocker. We could probably live with emails for another year, but a Slack connector would definitely look neat and clean.",
+      "contradictions": [
+        {
+          "type": "contradiction",
+          "quote": "Earlier: 'Right now, we get email alerts sent to our team alias. It is somewhat messy because people miss threads, which delays incident response by about an hour.' Later: 'We could probably live with emails for another year, but a Slack connector would definitely look neat and clean.'",
+          "quote1": "Right now, we get email alerts sent to our team alias. It is somewhat messy because people miss threads, which delays incident response by about an hour.",
+          "quote2": "We could probably live with emails for another year, but a Slack connector would definitely look neat and clean.",
+          "speaker": "customer",
+          "reason": "The customer initially claims that email alerts are a messy workflow causing a costly one-hour delay in critical incident response. However, they later admit they can easily live with this exact email setup for another year, revealing that the stated pain does not correspond to an urgent need to purchase or adopt a solution.",
+          "explanation": "The customer initially claims that email alerts are a messy workflow causing a costly one-hour delay in critical incident response. However, they later admit they can easily live with this exact email setup for another year, revealing that the stated pain does not correspond to an urgent need to purchase or adopt a solution.",
+          "confidence": 0.95,
+          "severity": "high",
+          "id": "c_0_1781877904096"
+        }
+      ],
+      "politenessBiases": [
+        {
+          "type": "politeness_bias",
+          "quote": "a Slack connector would definitely look neat and clean.",
+          "speaker": "customer",
+          "reason": "The customer uses soft, aesthetic language ('neat and clean') to show pleasant agreement with the product idea, despite having just admitted that the solution is a non-essential 'nice-to-have' that they do not plan to fund anytime soon.",
+          "explanation": "The customer uses soft, aesthetic language ('neat and clean') to show pleasant agreement with the addressable product idea, despite having just admitted that the solution is a non-essential 'nice-to-have' that they do not plan to fund anytime soon.",
+          "confidence": 0.9,
+          "marker": "look neat and clean",
+          "intensity": "moderate",
+          "id": "p_0_1781877904096"
+        }
+      ],
+      "leadingQuestions": [
+        {
+          "type": "leading_question",
+          "quote": "If we pushed these alerts directly as interactive Slack notifications, would that solve your incident delays?",
+          "question": "If we pushed these alerts directly as interactive Slack notifications, would that solve your incident delays?",
+          "response": "Yes, Slack is where we spend 90% of our active communication time. Pushing notifications directly into our #ops channel would certainly make the alerts highly visible and improve coordination.",
+          "speaker": "interviewer",
+          "reason": "The interviewer uses a hypothetical framing ('If we pushed...') combined with an evaluative validation prompt ('would that solve your incident delays?'), which nudges the client to agree with the proposed solution rather than discovering their natural priority.",
+          "explanation": "The interviewer uses a hypothetical framing ('If we pushed...') combined with an evaluative validation prompt ('would that solve your incident delays?'), which nudges the client to agree with the proposed solution rather than discovering their natural priority.",
+          "confidence": 0.95,
+          "severity": "medium",
+          "id": "l_0_1781877904096"
+        }
+      ],
+      "frictionGaps": [
+        {
+          "type": "friction_gap",
+          "quote": "Maybe at some point next summer. Alerts are important, but currently our core focus is upgrading database clusters, so getting Slack alerts is more of a 'nice-to-have' convenience rather than a blocker.",
+          "statedImportance": "It is somewhat messy because people miss threads, which delays incident response by about an hour.",
+          "actualBehaviorOrLackThereof": "Currently our core focus is upgrading database clusters... We could probably live with emails for another year.",
+          "speaker": "customer",
+          "reason": "Despite claiming that current email alerts delay critical incident response by an hour, the customer's actual behavior is to defer any budget or action to fix this issue until next summer at the earliest, showing that database upgrades are their true active priority.",
+          "explanation": "Despite claiming that current email alerts delay critical incident response by an hour, the customer's actual behavior is to defer any budget or action to fix this issue until next summer at the earliest, showing that database upgrades are their true active priority.",
+          "confidence": 0.95,
+          "gapScore": 8,
+          "id": "f_0_1781877904096"
+        }
+      ],
+      "narrativeSummary": "The customer interview reveals a classic high-severity risk: a clear gap between a stated operational pain point and the actual intent to pay to resolve it. While the customer describes a messy email system that causes hour-long delays in incident response, they quickly re-frame the Slack notifications engine as a 'nice-to-have' that they can live without for another year because their actual budget and engineering focus are dedicated to upgrading database clusters. This discrepancy was masked initially by the interviewer asking a highly leading hypothetical question ('If we pushed... would that solve your incident delays?'), which prompted the customer into a polite, agreeable response praising Slack before the financial and operational reality of their low prioritization emerged.",
+      "recommendedNextActions": [
+        {
+          "action": "Qualify prospects by behavior over pain statements",
+          "description": "Pivot future discovery calls to ask about past or current actions taken to resolve critical alert delays, rather than hypothetical willingness to buy. For example: 'What processes or custom workarounds have you tried to implement over the last six months to reduce that hour-long delay?'",
+          "expectedRiskReduction": 35,
+          "difficulty": "low",
+          "estimatedEffortHours": 3,
+          "id": "act_0_1781877904096"
+        },
+        {
+          "action": "Implement a 'skin-in-the-game' beta validation gate",
+          "description": "Instead of immediately building a full real-time notifications engine, offer the customer a simple, manual webhook integration pilot that requires their team to spend 30 minutes configuring, or a low-cost pre-order, to verify if they will expend actual effort to solve the problem today.",
+          "expectedRiskReduction": 50,
+          "difficulty": "medium",
+          "estimatedEffortHours": 12,
+          "id": "act_1_1781877904096"
+        }
+      ],
+      "ffsRaw": 52,
+      "iqsRaw": 79,
+      "confidenceScore": 93,
+      "pFail": 0.66,
+      "budget": 120000,
+      "expectedLoss": 79200,
+      "recommendation": "HALT_ALLOCATION",
+      "createdAt": "2026-06-19T14:05:04.097Z"
+    }
+  ]
+}

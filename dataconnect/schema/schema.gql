@@ -1,0 +1,87 @@
+type User @table(key: "uid") {
+  uid: String! @default(expr: "auth.uid")
+  email: String! @unique
+  displayName: String
+  photoUrl: String
+  createdAt: Timestamp! @default(expr: "request.time")
+  updatedAt: Timestamp! @default(expr: "request.time")
+}
+
+type Feature @table {
+  id: UUID! @default(expr: "uuidV4()")
+  user: User!
+  name: String!
+  budget: Float
+  status: String!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+type Transcript @table {
+  id: UUID! @default(expr: "uuidV4()")
+  feature: Feature!
+  rawText: String!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+type Analysis @table {
+  id: UUID! @default(expr: "uuidV4()")
+  transcript: Transcript!
+  narrativeSummary: String
+  ffsRaw: Float
+  iqsRaw: Float
+  pFail: Float
+  expectedLoss: Float
+  recommendation: String
+  confidenceScore: Float
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+type SignalContradiction @table {
+  id: UUID! @default(expr: "uuidV4()")
+  analysis: Analysis!
+  quote1: String!
+  quote2: String!
+  explanation: String
+  severity: String
+}
+
+type SignalPoliteness @table {
+  id: UUID! @default(expr: "uuidV4()")
+  analysis: Analysis!
+  quote: String!
+  marker: String!
+  intensity: String
+}
+
+type SignalLeadingQuestion @table {
+  id: UUID! @default(expr: "uuidV4()")
+  analysis: Analysis!
+  question: String!
+  response: String!
+  severity: String
+}
+
+type SignalFrictionGap @table {
+  id: UUID! @default(expr: "uuidV4()")
+  analysis: Analysis!
+  statedImportance: String!
+  actualBehavior: String!
+  gapScore: Int
+}
+
+type RecommendedAction @table {
+  id: UUID! @default(expr: "uuidV4()")
+  analysis: Analysis!
+  title: String!
+  description: String
+  expectedRiskReduction: Float
+  difficulty: String
+  estimatedEffortHours: Int
+}
+
+type ValidationRecord @table {
+  id: UUID! @default(expr: "uuidV4()")
+  feature: Feature!
+  actualOutcome: String!
+  completedAt: Timestamp! @default(expr: "request.time")
+}

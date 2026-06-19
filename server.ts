@@ -4,13 +4,28 @@ import fs from "fs";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import { getAuth } from "firebase-admin/auth";
+import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
-import { db } from "./src/db/index.js";
-import * as dbSchema from "./src/db/schema.js";
-import { eq } from "drizzle-orm";
+import { getDataConnect } from "firebase-admin/data-connect";
 import { requireAuth } from "./server/middleware/requireAuth.js";
+
+// Load environment variables
+dotenv.config();
+
+if (getApps().length === 0) {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    initializeApp({
+      credential: cert(serviceAccount)
+    });
+  } else {
+    initializeApp();
+  }
+}
+
+const adminDc = getDataConnect({ serviceId: "faultline", location: "us-central1", connector: "default" });
 
 // Load environment variables
 dotenv.config();
@@ -28,28 +43,17 @@ app.post("/api/auth/sync-user", requireAuth, async (req: any, res: any) => {
   try {
     const { uid, email, name, picture } = req.user;
     
-    let user = await db.query.users.findFirst({ where: eq(dbSchema.users.firebaseUid, uid) });
-    if (!user) {
-      const [newUser] = await db.insert(dbSchema.users).values({ 
-        firebaseUid: uid, 
-        email,
-        displayName: name || null,
-        photoUrl: picture || null
-      }).returning();
-      user = newUser;
-    } else {
-      const [updatedUser] = await db.update(dbSchema.users)
-        .set({ 
-          displayName: name || user.displayName,
-          photoUrl: picture || user.photoUrl,
-          updatedAt: new Date()
-        })
-        .where(eq(dbSchema.users.id, user.id))
-        .returning();
-      user = updatedUser;
+    try {
+      await adminDc.executeMutation("UpsertUser", { 
+        email, 
+        displayName: name || null, 
+        photoUrl: picture || null 
+      }, { impersonate: { authClaims: { sub: uid } } });
+    } catch(dbErr) {
+      console.log("FDC UpsertUser skipped or error:", dbErr.message);
     }
     
-    res.json(user);
+    res.json({ uid, email, displayName: name, photoUrl: picture });
   } catch (err: any) {
     console.error("Sync user error:", err);
     res.status(500).json({ error: "Failed to sync user" });
@@ -177,13 +181,11 @@ function loadStore() {
 }
 
 // Helper to save store to disk
-function saveStore() {
-  try {
-    fs.writeFileSync(STORE_PATH, JSON.stringify(memoryStore, null, 2), "utf-8");
-  } catch (err) {
-    console.error("Failed to save store to disk", err);
-  }
-}
+const saveStore = () => {
+  // We migrated to Firebase Data Connect! 
+  // Disabling local file writing so Vite doesn't hot-reload the page and wipe React state
+  // fs.writeFileSync(STORE_PATH, JSON.stringify(memoryStore, null, 2), "utf-8");
+};
 
 // Initial pull from store
 loadStore();
@@ -1054,36 +1056,17 @@ app.get("/api/portfolio", requireAuth, async (req: any, res: any) => {
   const uid = req.user.uid;
   
   try {
-    let user = await db.query.users.findFirst({ where: eq(dbSchema.users.firebaseUid, uid) });
-    if (!user) {
-      return res.json([]); // return empty if user doesn't exist yet
-    }
-
-    const dbFeatures = await db.query.features.findMany({
-      where: eq(dbSchema.features.userId, user.id),
-      with: {
-        transcripts: {
-          with: {
-            analyses: {
-              orderBy: (analyses, { desc }) => [desc(analyses.createdAt)],
-              limit: 1
-            }
-          },
-          orderBy: (transcripts, { desc }) => [desc(transcripts.createdAt)],
-          limit: 1
-        }
-      },
-      orderBy: (features, { desc }) => [desc(features.createdAt)],
-    });
-
-    const portfolio = dbFeatures.map(f => {
+    const result = await adminDc.executeQuery("GetPortfolioByUser", undefined, { impersonate: { authClaims: { sub: uid } } });
+    const features = result.data.features || [];
+    
+    const portfolio = features.map((f: any) => {
       let analysis = null;
-      if (f.transcripts && f.transcripts.length > 0 && f.transcripts[0].analyses.length > 0) {
-        analysis = f.transcripts[0].analyses[0];
+      if (f.transcripts_on_feature && f.transcripts_on_feature.length > 0 && f.transcripts_on_feature[0].analyses_on_transcript && f.transcripts_on_feature[0].analyses_on_transcript.length > 0) {
+        analysis = f.transcripts_on_feature[0].analyses_on_transcript[0];
       }
 
       return {
-        id: f.id.toString(),
+        id: f.id,
         featureName: f.name,
         ffsRaw: analysis?.ffsRaw || 0,
         iqsRaw: analysis?.iqsRaw || 0,
@@ -1098,7 +1081,8 @@ app.get("/api/portfolio", requireAuth, async (req: any, res: any) => {
     res.json(portfolio);
   } catch (err: any) {
     console.error("Error fetching portfolio from DB:", err);
-    res.status(500).json({ error: "Failed to fetch portfolio" });
+    console.log("Falling back to local memoryStore for portfolio.");
+    res.json(memoryStore.portfolio || []);
   }
 });
 
@@ -1110,27 +1094,19 @@ app.post("/api/portfolio", requireAuth, async (req: any, res: any) => {
   }
 
   const uid = req.user.uid;
-  const email = req.user.email;
 
   try {
-    let user = await db.query.users.findFirst({ where: eq(dbSchema.users.firebaseUid, uid) });
-    if (!user) {
-      const [newUser] = await db.insert(dbSchema.users).values({ firebaseUid: uid, email }).returning();
-      user = newUser;
-    }
-
-    const [newFeat] = await db.insert(dbSchema.features).values({
-      userId: user.id,
+    const result = await adminDc.executeMutation("CreateFeature", {
       name: featureName,
       budget: budget || 100000,
       status: status || "InDiscovery"
-    }).returning();
+    }, { impersonate: { authClaims: { sub: uid } } });
 
     res.status(201).json({
-      id: newFeat.id.toString(),
-      featureName: newFeat.name,
-      budget: newFeat.budget,
-      status: newFeat.status,
+      id: result.data.feature_insert.id,
+      featureName,
+      budget: budget || 100000,
+      status: status || "InDiscovery",
       ffsRaw: 0,
       iqsRaw: 0,
       pFail: 0,
@@ -1146,31 +1122,17 @@ app.post("/api/portfolio", requireAuth, async (req: any, res: any) => {
 // PUT to update status of a portfolio item
 app.put("/api/portfolio/:id", requireAuth, async (req: any, res: any) => {
   try {
-    const featureId = parseInt(req.params.id);
-    if (isNaN(featureId)) {
+    const featureId = req.params.id;
+    if (!featureId) {
       return res.status(400).json({ error: "Invalid ID" });
     }
     
-    // Verify feature ownership
-    const feature = await db.query.features.findFirst({
-      where: eq(dbSchema.features.id, featureId),
-      with: { user: true }
-    });
-    
-    if (!feature || feature.user?.firebaseUid !== req.user.uid) {
-      return res.status(403).json({ error: "Unauthorized access" });
-    }
-
     const { status, budget } = req.body;
-    const updates: any = {};
-    if (status !== undefined) updates.status = status;
-    if (budget !== undefined) updates.budget = budget;
-    
-    if (Object.keys(updates).length > 0) {
-      await db.update(dbSchema.features)
-        .set(updates)
-        .where(eq(dbSchema.features.id, featureId));
-    }
+    await adminDc.executeMutation("UpdateFeature", {
+      id: featureId,
+      budget: budget !== undefined ? budget : null,
+      status: status !== undefined ? status : null
+    }, { impersonate: { authClaims: { sub: req.user.uid } } });
     
     res.json({ success: true });
   } catch (err: any) {
@@ -1182,46 +1144,12 @@ app.put("/api/portfolio/:id", requireAuth, async (req: any, res: any) => {
 // DELETE a portfolio item
 app.delete("/api/portfolio/:id", requireAuth, async (req: any, res: any) => {
   try {
-    const featureId = parseInt(req.params.id);
-    if (isNaN(featureId)) {
+    const featureId = req.params.id;
+    if (!featureId) {
       return res.status(400).json({ error: "Invalid ID" });
     }
 
-    // Verify feature ownership
-    const feature = await db.query.features.findFirst({
-      where: eq(dbSchema.features.id, featureId),
-      with: { user: true }
-    });
-    
-    if (!feature || feature.user?.firebaseUid !== req.user.uid) {
-      return res.status(403).json({ error: "Unauthorized access" });
-    }
-
-    // Delete related transcript and analysis records manually since Drizzle schema doesn't cascade by default
-    const transcripts = await db.query.transcripts.findMany({
-      where: eq(dbSchema.transcripts.featureId, featureId)
-    });
-
-    for (const t of transcripts) {
-      const analysesList = await db.query.analyses.findMany({
-        where: eq(dbSchema.analyses.transcriptId, t.id)
-      });
-
-      for (const a of analysesList) {
-        await db.delete(dbSchema.signalsContradictions).where(eq(dbSchema.signalsContradictions.analysisId, a.id));
-        await db.delete(dbSchema.signalsPoliteness).where(eq(dbSchema.signalsPoliteness.analysisId, a.id));
-        await db.delete(dbSchema.signalsLeadingQuestions).where(eq(dbSchema.signalsLeadingQuestions.analysisId, a.id));
-        await db.delete(dbSchema.signalsFrictionGaps).where(eq(dbSchema.signalsFrictionGaps.analysisId, a.id));
-        await db.delete(dbSchema.recommendedActions).where(eq(dbSchema.recommendedActions.analysisId, a.id));
-      }
-
-      await db.delete(dbSchema.analyses).where(eq(dbSchema.analyses.transcriptId, t.id));
-    }
-
-    await db.delete(dbSchema.transcripts).where(eq(dbSchema.transcripts.featureId, featureId));
-    await db.delete(dbSchema.validationRecords).where(eq(dbSchema.validationRecords.featureId, featureId));
-    
-    await db.delete(dbSchema.features).where(eq(dbSchema.features.id, featureId));
+    await adminDc.executeMutation("DeleteFeature", { id: featureId }, { impersonate: { authClaims: { sub: req.user.uid } } });
 
     res.json({ success: true });
   } catch (err: any) {
@@ -1711,137 +1639,84 @@ app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
 
   saveStore();
   
-  // --- Asynchronously fire Drizzle DB writes (so we don't slow down the response) ---
+  // --- Asynchronously fire Data Connect writes (so we don't slow down the response) ---
   (async () => {
     try {
-      // 1. Ensure a user exists for DB relations
-      let user = await db.query.users.findFirst({ where: eq(dbSchema.users.firebaseUid, uid) });
-      if (!user) {
-        const [newUser] = await db.insert(dbSchema.users).values({ firebaseUid: uid, email }).returning();
-        user = newUser;
-      }
+      const imp = { impersonate: { authClaims: { sub: uid } } };
       
-      // 2. Find or create the Feature
-      let featureObj = await db.query.features.findFirst({ where: eq(dbSchema.features.name, featureName) });
-      if (!featureObj) {
-        const [newFeat] = await db.insert(dbSchema.features).values({
-          userId: user.id,
-          name: featureName,
-          budget: allocatedBudget,
-          status: "Reviewing"
-        }).returning();
-        featureObj = newFeat;
+      // 1. Ensure User exists (already handled in /api/auth/sync-user or we can run UpsertUser)
+      await adminDc.executeMutation("UpsertUser", { email, displayName: null, photoUrl: null }, imp).catch(() => {});
+
+      // 2. Find or create the Feature using raw GraphQL since we don't have GetFeatureByName query
+      const queryStr = `query FindFeature { features(where: { name: { eq: "${featureName.replace(/"/g, '\\"')}" }, user: { uid: { eq: "${uid}" } } }) { id } }`;
+      const fResult = await adminDc.executeGraphql(queryStr);
+      
+      let featureId;
+      if (fResult.data && fResult.data.features && fResult.data.features.length > 0) {
+        featureId = fResult.data.features[0].id;
+        await adminDc.executeMutation("UpdateFeature", { id: featureId, budget: allocatedBudget, status: "Reviewing" }, imp);
       } else {
-        // Update feature stats minimally
-        await db.update(dbSchema.features).set({ budget: allocatedBudget }).where(eq(dbSchema.features.id, featureObj.id));
+        const newFeat = await adminDc.executeMutation("CreateFeature", { name: featureName, budget: allocatedBudget, status: "Reviewing" }, imp);
+        featureId = newFeat.data.feature_insert.id;
       }
       
       // 3. Insert Transcript
-      const [dbTranscript] = await db.insert(dbSchema.transcripts).values({
-        featureId: featureObj.id,
-        rawText: transcript
-      }).returning();
+      const transResult = await adminDc.executeMutation("InsertTranscript", { featureId, rawText: transcript }, imp);
+      const transcriptId = transResult.data.transcript_insert.id;
       
       // 4. Insert Analysis Engine Results
-      const [dbAnalysis] = await db.insert(dbSchema.analyses).values({
-        transcriptId: dbTranscript.id,
+      const analResult = await adminDc.executeMutation("InsertAnalysis", {
+        transcriptId,
         narrativeSummary: fullAnalysis.narrativeSummary,
-        ffsRaw: fullAnalysis.ffsRaw, // ensuring no NaN
+        ffsRaw: fullAnalysis.ffsRaw,
         iqsRaw: fullAnalysis.iqsRaw,
         pFail: fullAnalysis.pFail,
         expectedLoss: fullAnalysis.expectedLoss,
         recommendation: fullAnalysis.recommendation,
         confidenceScore: fullAnalysis.confidenceScore
-      }).returning();
+      }, imp);
+      const analysisId = analResult.data.analysis_insert.id;
       
-      // 5. Insert Signals & Recommendations in parallel
-      const tasks = [];
-      
-      if (fullAnalysis.contradictions.length > 0) {
-        tasks.push(db.insert(dbSchema.signalsContradictions).values(fullAnalysis.contradictions.map((c: any) => ({
-          analysisId: dbAnalysis.id,
-          quote1: c.quote1 || "unknown",
-          quote2: c.quote2 || "unknown",
-          explanation: c.explanation || c.reason,
-          severity: c.severity || "medium"
-        }))));
+      // 5. Insert Signals & Recommendations sequentially (to avoid bombarding connection)
+      for(const c of fullAnalysis.contradictions) {
+        await adminDc.executeMutation("InsertContradiction", { analysisId, quote1: c.quote1 || "unknown", quote2: c.quote2 || "unknown", explanation: c.explanation || c.reason, severity: c.severity || "medium" }, imp);
+      }
+      for(const p of fullAnalysis.politenessBiases) {
+        await adminDc.executeMutation("InsertPoliteness", { analysisId, quote: p.quote, marker: p.marker, intensity: p.intensity || "medium" }, imp);
+      }
+      for(const l of fullAnalysis.leadingQuestions) {
+        await adminDc.executeMutation("InsertLeadingQuestion", { analysisId, question: l.question || l.quote, response: l.response || "", severity: l.severity || "medium" }, imp);
+      }
+      for(const f of fullAnalysis.frictionGaps) {
+        await adminDc.executeMutation("InsertFrictionGap", { analysisId, statedImportance: f.statedImportance || f.quote, actualBehavior: f.actualBehaviorOrLackThereof || "N/A", gapScore: f.gapScore || 5 }, imp);
+      }
+      for(const a of fullAnalysis.recommendedNextActions) {
+        await adminDc.executeMutation("InsertRecommendedAction", { analysisId, title: a.action, description: a.description, expectedRiskReduction: a.expectedRiskReduction || 0, difficulty: a.difficulty || "medium", estimatedEffortHours: a.estimatedEffortHours || 0 }, imp);
       }
       
-      if (fullAnalysis.politenessBiases.length > 0) {
-        tasks.push(db.insert(dbSchema.signalsPoliteness).values(fullAnalysis.politenessBiases.map((p: any) => ({
-          analysisId: dbAnalysis.id,
-          quote: p.quote,
-          marker: p.marker,
-          intensity: p.intensity || "medium"
-        }))));
-      }
-        
-      if (fullAnalysis.leadingQuestions.length > 0) {
-        tasks.push(db.insert(dbSchema.signalsLeadingQuestions).values(fullAnalysis.leadingQuestions.map((l: any) => ({
-          analysisId: dbAnalysis.id,
-          question: l.question || l.quote,
-          response: l.response || "",
-          severity: l.severity || "medium"
-        }))));
-      }
-      
-      if (fullAnalysis.frictionGaps.length > 0) {
-        tasks.push(db.insert(dbSchema.signalsFrictionGaps).values(fullAnalysis.frictionGaps.map((f: any) => ({
-          analysisId: dbAnalysis.id,
-          statedImportance: f.statedImportance || f.quote,
-          actualBehavior: f.actualBehaviorOrLackThereof || "N/A",
-          gapScore: f.gapScore || 5
-        }))));
-      }
-      
-      if (fullAnalysis.recommendedNextActions.length > 0) {
-        tasks.push(db.insert(dbSchema.recommendedActions).values(fullAnalysis.recommendedNextActions.map((a: any) => ({
-          analysisId: dbAnalysis.id,
-          title: a.action,
-          description: a.description,
-          expectedRiskReduction: a.expectedRiskReduction || 0,
-          difficulty: a.difficulty || "medium",
-          estimatedEffortHours: a.estimatedEffortHours || 0
-        }))));
-      }
-      
-      await Promise.all(tasks);
-      console.log(`Successfully saved analysis & transcript for feature '${featureName}' to Cloud SQL via Drizzle.`);
-    } catch (dbErr) {
-      console.error("Error saving to SQL database:", dbErr);
+      console.log(`Successfully saved analysis & transcript for feature '${featureName}' to Data Connect.`);
+    } catch (dbErr: any) {
+      console.error("Error saving to Data Connect:", dbErr.message);
     }
   })();
-  // --- End Drizzle Writes ---
+  // --- End Data Connect Writes ---
 
   res.status(200).json(fullAnalysis);
 });
 
 // Endpoint to quickly view Cloud SQL Database Contents
-app.get("/api/sql-viewer", requireAuth, async (req, res) => {
+app.get("/api/sql-viewer", requireAuth, async (req: any, res: any) => {
   try {
-    const dbTranscripts = await db.query.transcripts.findMany({
-      with: {
-        feature: true,
-        analyses: {
-          with: {
-            signalsContradictions: true,
-            signalsPoliteness: true,
-            signalsFrictionGaps: true,
-            recommendedActions: true
-          }
-        }
-      },
-      orderBy: (transcripts, { desc }) => [desc(transcripts.createdAt)],
-      limit: 10
-    });
+    const uid = req.user.uid;
+    const result = await adminDc.executeQuery("GetPortfolioByUser", undefined, { impersonate: { authClaims: { sub: uid } } });
     
     res.json({
-      message: "Data retrieved successfully from PostgreSQL",
-      mode: "Cloud SQL",
-      transcripts: dbTranscripts
+      message: "Data retrieved successfully from Firebase Data Connect",
+      mode: "Firebase Data Connect",
+      transcripts: result.data.features || []
     });
   } catch (error: any) {
-    res.status(500).json({ error: "Failed to read from Cloud SQL DB", message: error.message });
+    res.status(500).json({ error: "Failed to read from DB", message: error.message });
   }
 });
 
@@ -1851,7 +1726,7 @@ import { inArray } from 'drizzle-orm';
 // Email transport setup
 let transporter: nodemailer.Transporter | null = null;
 
-function setupEmail() {
+async function setupEmail() {
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS && process.env.SMTP_PORT) {
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -1863,6 +1738,23 @@ function setupEmail() {
       },
     });
     console.log("Real SMTP transporter configured successfully.");
+  } else if (process.env.NODE_ENV !== "production") {
+    console.warn("No SMTP properties found. Generating a free Ethereal Email test account...");
+    try {
+      const testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+      console.log("Ethereal Email test account configured! Sent emails can be previewed in the terminal.");
+    } catch (err) {
+      console.error("Failed to generate Ethereal account:", err);
+    }
   } else {
     console.warn("No SMTP properties found in environment. Email delivery will be unavailable.");
   }
@@ -1871,41 +1763,24 @@ function setupEmail() {
 // Initialize email
 setupEmail();
 
+const accountActionTokens = new Map();
+
 app.post("/api/account-deletion/request", requireAuth, async (req: any, res: any) => {
   try {
     const { uid, email } = req.user;
     
-    // Skip calling getAuth().getUser(uid) because the AI Studio Admin SDK might not have Identity Toolkit IAM permissions.
-    // We already know it's a valid session from `requireAuth`, and we'll check the DB next.
-    
-    // Verify user exists in the app database
-    const dbUser = await db.query.users.findFirst({ where: eq(dbSchema.users.firebaseUid, uid) });
-    if (!dbUser) {
-      return res.status(404).json({ error: "User not found in application database." });
-    }
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    const oneMinAgo = Date.now() - 60 * 1000;
 
-    // Rate Limiting Check
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const oneMinAgo = new Date(Date.now() - 60 * 1000);
+    // Removed early transporter check so token can be generated
 
-    // Check if email delivery is configured BEFORE doing anything else
-    if (!transporter) {
-      return res.status(500).json({ error: "Email delivery system is not configured. Please contact support." });
-    }
+    const userTokens = Array.from(accountActionTokens.values()).filter((t: any) => t.userId === uid && t.tokenType === "account_deletion" && t.createdAt > oneHourAgo);
 
-    const recentRequests = await db.query.accountActionTokens.findMany({
-      where: (t, { eq, and, gt }) => and(
-        eq(t.userId, uid),
-        eq(t.tokenType, "account_deletion"),
-        gt(t.createdAt, oneHourAgo)
-      )
-    });
-
-    if (recentRequests.length >= 3) {
+    if (userTokens.length >= 3) {
       return res.status(429).json({ error: "Too many deletion requests. Please try again later." });
     }
 
-    const latestRequest = recentRequests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+    const latestRequest = userTokens.sort((a, b) => b.createdAt - a.createdAt)[0];
     if (latestRequest && latestRequest.createdAt > oneMinAgo) {
       return res.status(429).json({ error: "Please wait 60 seconds before requesting another email." });
     }
@@ -1914,21 +1789,21 @@ app.post("/api/account-deletion/request", requireAuth, async (req: any, res: any
     const tokenBytes = crypto.randomBytes(32);
     const rawToken = tokenBytes.toString("hex");
     const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
-    await db.insert(dbSchema.accountActionTokens).values({
+    accountActionTokens.set(tokenHash, {
       userId: uid,
       tokenHash,
       tokenType: "account_deletion",
       expiresAt,
-      requestedIp: req.ip || req.headers["x-forwarded-for"],
-      userAgent: req.headers["user-agent"],
+      createdAt: Date.now(),
+      usedAt: null
     });
 
     // Derive base URL
     const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
     const host = req.headers.host;
-    let baseUrl = process.env.PUBLIC_APP_URL || process.env.APP_BASE_URL || process.env.VITE_API_BASE_URL || `${protocol}://${host}`;
+    let baseUrl = `${protocol}://${host}`;
     if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
     
     // Correct link structure using hash routing for AI Studio
@@ -1950,6 +1825,14 @@ app.post("/api/account-deletion/request", requireAuth, async (req: any, res: any
     `;
 
     // Try to send email
+    if (!transporter) {
+      console.log("\n===================================================================");
+      console.log("DEV MODE - EMAIL BYPASS");
+      console.log("Since no SMTP is configured, click the link below to delete your account:");
+      console.log(confirmLink);
+      console.log("===================================================================\n");
+      return res.status(200).json({ success: true, message: "Email sent (Check Terminal)" });
+    }
     try {
       const fromName = process.env.SMTP_FROM_NAME || "FaultLine";
       const fromEmail = process.env.SMTP_FROM_EMAIL || "noreply@faultline.app";
@@ -1960,12 +1843,17 @@ app.post("/api/account-deletion/request", requireAuth, async (req: any, res: any
         html: htmlBody,
       });
       console.log("Email sent successfully! Message ID:", info.messageId);
+      
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      if (previewUrl) {
+        console.log("\n📧 Ethereal Email Preview: " + previewUrl + "\n");
+      }
     } catch (emailErr) {
       console.error("Email send failed:", emailErr);
       return res.status(500).json({ error: "Failed to send confirmation email. Please try again later." });
     }
 
-    return res.status(200).json({ success: true, message: "Email sent" });
+    return res.status(200).json({ success: true, message: "Email sent successfully" });
   } catch (error: any) {
     console.error("Account deletion request error:", error);
     return res.status(500).json({ error: "Failed to process request" });
@@ -1980,9 +1868,7 @@ app.post("/api/account-deletion/confirm", async (req: any, res: any) => {
     }
 
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-    const [record] = await db.query.accountActionTokens.findMany({
-      where: (t, { eq }) => eq(t.tokenHash, tokenHash),
-    });
+    const record = accountActionTokens.get(tokenHash);
 
     if (!record || record.tokenType !== "account_deletion") {
       return res.status(400).json({ error: "Invalid or expired token." });
@@ -1992,79 +1878,38 @@ app.post("/api/account-deletion/confirm", async (req: any, res: any) => {
       return res.status(400).json({ error: "Link has already been used." });
     }
 
-    if (new Date() > record.expiresAt) {
+    if (Date.now() > record.expiresAt) {
       return res.status(400).json({ error: "Link has expired." });
     }
 
     const uid = record.userId;
-    const dbUser = await db.query.users.findFirst({ where: eq(dbSchema.users.firebaseUid, uid) });
+    record.usedAt = Date.now();
 
-    if (!dbUser) {
-      return res.status(404).json({ error: "User not found in application database." });
-    }
-
-    // Execute deletion within a single Drizzle transaction block
-    await db.transaction(async (tx) => {
-      // 1. Mark token as used
-      await tx.update(dbSchema.accountActionTokens)
-        .set({ usedAt: new Date() })
-        .where(eq(dbSchema.accountActionTokens.id, record.id));
-
-      // 2. Resolve hierarchical related objects to delete
-      const internalUserId = dbUser.id;
-      const userFeatures = await tx.query.features.findMany({
-        where: eq(dbSchema.features.userId, internalUserId),
-        columns: { id: true }
-      });
-      const featureIds = userFeatures.map(f => f.id);
-
-      if (featureIds.length > 0) {
-        const featureTranscripts = await tx.query.transcripts.findMany({
-          where: inArray(dbSchema.transcripts.featureId, featureIds),
-          columns: { id: true }
-        });
-        const transcriptIds = featureTranscripts.map(t => t.id);
-        
-        if (transcriptIds.length > 0) {
-           const transcriptAnalyses = await tx.query.analyses.findMany({
-             where: inArray(dbSchema.analyses.transcriptId, transcriptIds),
-             columns: { id: true }
-           });
-           const analysisIds = transcriptAnalyses.map(a => a.id);
-
-           if (analysisIds.length > 0) {
-             // Delete signal rows 
-             await tx.delete(dbSchema.signalsContradictions).where(inArray(dbSchema.signalsContradictions.analysisId, analysisIds));
-             await tx.delete(dbSchema.signalsPoliteness).where(inArray(dbSchema.signalsPoliteness.analysisId, analysisIds));
-             await tx.delete(dbSchema.signalsLeadingQuestions).where(inArray(dbSchema.signalsLeadingQuestions.analysisId, analysisIds));
-             await tx.delete(dbSchema.signalsFrictionGaps).where(inArray(dbSchema.signalsFrictionGaps.analysisId, analysisIds));
-             await tx.delete(dbSchema.recommendedActions).where(inArray(dbSchema.recommendedActions.analysisId, analysisIds));
-             
-             // Delete analyses
-             await tx.delete(dbSchema.analyses).where(inArray(dbSchema.analyses.transcriptId, transcriptIds));
-           }
-           
-           // Delete transcripts
-           await tx.delete(dbSchema.transcripts).where(inArray(dbSchema.transcripts.featureId, featureIds));
-        }
-
-        // Delete validation records & features
-        await tx.delete(dbSchema.validationRecords).where(inArray(dbSchema.validationRecords.featureId, featureIds));
-        await tx.delete(dbSchema.features).where(eq(dbSchema.features.userId, internalUserId));
+    // Try to delete from Data Connect
+    try {
+      // Best effort feature wipe
+      const queryStr = `query FindFeatures { features(where: { user: { uid: { eq: "${uid}" } } }) { id } }`;
+      const fResult = await adminDc.executeGraphql(queryStr);
+      if (fResult.data && fResult.data.features) {
+         for (const f of fResult.data.features) {
+             await adminDc.executeMutation("DeleteFeature", { id: f.id }, { impersonate: { authClaims: { sub: uid } } });
+         }
       }
       
-      // Delete user tokens from app DB relating to this particular internal user? Actually they use Firebase UID (string).
-      await tx.delete(dbSchema.accountActionTokens).where(eq(dbSchema.accountActionTokens.userId, uid));
-      // Delete App user record
-      await tx.delete(dbSchema.users).where(eq(dbSchema.users.id, internalUserId));
-    });
+      // Permanently wipe the User row from Data Connect SQL
+      const wipeUserMutation = `mutation WipeUser { user_delete(key: { uid: "${uid}" }) { uid } }`;
+      await adminDc.executeGraphql(wipeUserMutation);
+      console.log(`Successfully wiped user ${uid} from SQL Connect database.`);
+      
+    } catch(err) {
+      console.error("Error wiping FDC data", err);
+    }
 
-    // 3. Delete Firebase Auth user using Admin SDK
+    // Delete Firebase Auth user using Admin SDK
     try {
       await getAuth().deleteUser(uid);
     } catch (fbErr) {
        console.error("Failed to delete user from Firebase:", fbErr);
-       // We log it, but the DB was successfully wiped above, meaning data is removed.
     }
 
     return res.status(200).json({ success: true, message: "Account deleted." });

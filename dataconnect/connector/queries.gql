@@ -1,0 +1,38 @@
+query GetPortfolioByUser @auth(level: USER) {
+  features(
+    where: { user: { uid: { eq_expr: "auth.uid" } } }
+    orderBy: [{ createdAt: DESC }]
+  ) {
+    id
+    name
+    budget
+    status
+    createdAt
+    transcripts_on_feature(orderBy: [{ createdAt: DESC }], limit: 1) {
+      id
+      analyses_on_transcript(orderBy: [{ createdAt: DESC }], limit: 1) {
+        id
+        ffsRaw
+        iqsRaw
+        pFail
+        expectedLoss
+        recommendation
+        confidenceScore
+      }
+    }
+  }
+}
+
+query GetValidationRecords @auth(level: USER) {
+  validationRecords(
+    where: { feature: { user: { uid: { eq_expr: "auth.uid" } } } }
+    orderBy: [{ completedAt: DESC }]
+  ) {
+    id
+    actualOutcome
+    completedAt
+    feature {
+      name
+    }
+  }
+}

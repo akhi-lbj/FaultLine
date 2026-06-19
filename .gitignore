@@ -7,3 +7,5 @@ coverage/
 .env*
 !.env.example
 firebase-applet-config.json
+project-2-490908-firebase-adminsdk-fbsvc-91fa919bde.json
+.agents

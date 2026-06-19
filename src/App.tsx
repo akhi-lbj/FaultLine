@@ -234,13 +234,19 @@ function MainApp({ hash, user, loading, logout }: { hash: string, user: any, loa
         })
       });
 
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Server error: ${response.status}`);
+      }
+
       const data: TranscriptAnalysis = await response.json();
       setActiveAnalysis(data);
       
       // Auto-trigger db refresh
       await fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(`Audit failed: ${err.message}`);
     } finally {
       clearInterval(timer);
       setIsAnalyzing(false);
@@ -279,11 +285,18 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
             budget: item.budget
           })
         });
+        
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `Server error: ${response.status}`);
+        }
+
         const data = await response.json();
         setActiveAnalysis(data);
         await fetchData();
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+        alert(`Failed to load: ${err.message}`);
       } finally {
         setIsAnalyzing(false);
       }
