@@ -1712,7 +1712,7 @@ app.get("/api/sql-viewer", requireAuth, async (req: any, res: any) => {
     res.json({
       message: "Data retrieved successfully from Firebase Data Connect",
       mode: "Firebase Data Connect",
-      transcripts: result.data.features || []
+      transcripts: (result.data as any).features || []
     });
   } catch (error: any) {
     res.status(500).json({ error: "Failed to read from DB", message: error.message });
@@ -1959,14 +1959,14 @@ async function performFullAccountWipe(uid: string) {
   try {
     const queryStr = `query FindFeatures { features(where: { user: { uid: { eq: "${uid}" } } }) { id } }`;
     const fResult = await adminDc.executeGraphql(queryStr);
-    if (fResult.data && fResult.data.features) {
-       for (const f of fResult.data.features) {
+    if (fResult.data && (fResult.data as any).features) {
+       for (const f of (fResult.data as any).features) {
            const tResult = await adminDc.executeGraphql(`query { transcripts(where: { featureId: { eq: "${f.id}" } }) { id } }`);
-           if (tResult.data && tResult.data.transcripts) {
-              for (const t of tResult.data.transcripts) {
+           if (tResult.data && (tResult.data as any).transcripts) {
+              for (const t of (tResult.data as any).transcripts) {
                   const aResult = await adminDc.executeGraphql(`query { analyses(where: { transcriptId: { eq: "${t.id}" } }) { id } }`);
-                  if (aResult.data && aResult.data.analyses) {
-                     for (const a of aResult.data.analyses) {
+                  if (aResult.data && (aResult.data as any).analyses) {
+                     for (const a of (aResult.data as any).analyses) {
                         await adminDc.executeGraphql(`mutation { signalContradiction_deleteMany(where: { analysisId: { eq: "${a.id}" } }) }`);
                         await adminDc.executeGraphql(`mutation { signalPoliteness_deleteMany(where: { analysisId: { eq: "${a.id}" } }) }`);
                         await adminDc.executeGraphql(`mutation { signalLeadingQuestion_deleteMany(where: { analysisId: { eq: "${a.id}" } }) }`);
@@ -1985,8 +1985,8 @@ async function performFullAccountWipe(uid: string) {
     // Permanently wipe the User row from Data Connect SQL
     const wipeUserMutation = `mutation WipeUser { user_delete(key: { uid: "${uid}" }) }`;
     const wRes = await adminDc.executeGraphql(wipeUserMutation);
-    if (wRes.errors) {
-      console.error("Failed to delete user row:", wRes.errors);
+    if ((wRes as any).errors) {
+      console.error("Failed to delete user row:", (wRes as any).errors);
     } else {
       console.log(`Successfully wiped user ${uid} from SQL Connect database.`);
     }
