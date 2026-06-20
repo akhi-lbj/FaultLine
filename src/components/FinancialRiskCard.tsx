@@ -206,11 +206,37 @@ export default function FinancialRiskCard({ analysis, config }: FinancialRiskCar
               <div 
                 key={action.id}
                 onClick={() => {
-                  if (isChecked) {
-                    setSelectedActionIds(prev => prev.filter(id => id !== action.id));
-                  } else {
-                    setSelectedActionIds(prev => [...prev, action.id]);
-                  }
+                  const newChecked = !isChecked;
+                  const newSelectedIds = newChecked
+                    ? [...selectedActionIds, action.id]
+                    : selectedActionIds.filter(id => id !== action.id);
+                  setSelectedActionIds(newSelectedIds);
+
+                  let reduction = 0;
+                  analysis.recommendedNextActions.forEach(a => {
+                    if (newSelectedIds.includes(a.id)) reduction += a.expectedRiskReduction;
+                  });
+                  const simFfs = Math.max(0, baseFfs - reduction);
+                  const simExp = coefA * simFfs + coefB;
+                  const simPFail = 1 / (1 + Math.exp(simExp));
+                  const saved = Math.max(0, Math.round(budget * analysis.pFail) - Math.round(budget * simPFail));
+                  let simRec = 'VALIDATED_BUILD';
+                  if (simPFail >= 0.65) simRec = 'HALT_ALLOCATION';
+                  else if (simPFail >= 0.35) simRec = 'CONDITIONAL_REVIEW';
+                  else if (simPFail >= 0.20) simRec = 'PILOT_RECOMMENDED';
+
+                  pendo.track("derisking_simulation_changed", {
+                    actionName: action.action.substring(0, 64),
+                    actionChecked: newChecked,
+                    selectedActionCount: newSelectedIds.length,
+                    totalActions: analysis.recommendedNextActions.length,
+                    baseFfs,
+                    simulatedFfs: simFfs,
+                    simulatedPFail: Number(simPFail.toFixed(4)),
+                    capitalSaved: saved,
+                    simulatedRecommendation: simRec,
+                    featureName: analysis.featureName.substring(0, 50)
+                  });
                 }}
                 className={`p-3 border rounded-lg cursor-pointer transition-all space-y-1.5 ${
                   isChecked 

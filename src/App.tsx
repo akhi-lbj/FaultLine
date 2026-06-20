@@ -242,11 +242,33 @@ function MainApp({ hash, user, loading, logout, isLightTheme, toggleTheme }: { h
 
       const data: TranscriptAnalysis = await response.json();
       setActiveAnalysis(data);
-      
+
+      pendo.track("transcript_audit_completed", {
+        featureName: data.featureName.substring(0, 50),
+        budget: budgetAmount,
+        recommendation: data.recommendation,
+        pFail: data.pFail,
+        ffsRaw: data.ffsRaw,
+        iqsRaw: data.iqsRaw,
+        contradictionCount: data.contradictions?.length ?? 0,
+        politenessCount: data.politenessBiases?.length ?? 0,
+        leadingQuestionCount: data.leadingQuestions?.length ?? 0,
+        frictionGapCount: data.frictionGaps?.length ?? 0,
+        transcriptLength: transcriptText.length,
+        confidenceScore: data.confidenceScore,
+        expectedLoss: data.expectedLoss
+      });
+
       // Auto-trigger db refresh
       await fetchData();
     } catch (err: any) {
       console.error(err);
+      pendo.track("transcript_audit_failed", {
+        featureName: featureName.substring(0, 50),
+        budget: budgetAmount,
+        errorMessage: (err.message || "Unknown error").substring(0, 100),
+        transcriptLength: transcriptText.length
+      });
       alert(`Audit failed: ${err.message}`);
     } finally {
       clearInterval(timer);
@@ -285,6 +307,12 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
           const data = await fetchRes.json();
           setActiveAnalysis(data);
           await fetchData();
+          pendo.track("portfolio_item_loaded", {
+            featureName: item.featureName.substring(0, 50),
+            budget: item.budget,
+            hadExistingAnalysis: true,
+            hadMatchedTemplate: Boolean(matchedTemplate)
+          });
           return;
         }
 
@@ -309,6 +337,12 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
         const data = await response.json();
         setActiveAnalysis(data);
         await fetchData();
+        pendo.track("portfolio_item_loaded", {
+          featureName: item.featureName.substring(0, 50),
+          budget: item.budget,
+          hadExistingAnalysis: false,
+          hadMatchedTemplate: Boolean(matchedTemplate)
+        });
       } catch (err: any) {
         console.error(err);
         alert(`Failed to load: ${err.message}`);
@@ -328,6 +362,11 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
       await fetch(`/api/portfolio/${id}`, { method: "DELETE", headers: await getHeaders() });
       await fetchData();
 
+      pendo.track("portfolio_item_deleted", {
+        featureName: itemToDelete?.featureName?.substring(0, 50) || "",
+        wasActiveAnalysis: isCurrentlyActive
+      });
+
       if (isCurrentlyActive) {
         setActiveAnalysis(null);
       }
@@ -345,6 +384,11 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
         body: JSON.stringify({ featureName: name, budget, status })
       });
       await fetchData();
+      pendo.track("portfolio_item_added", {
+        featureName: name.substring(0, 50),
+        budget,
+        status
+      });
     } catch (err) {
       console.error(err);
     }
@@ -353,12 +397,18 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
   // Update portfolio status
   const handleUpdateStatus = async (id: string, status: any) => {
     try {
+      const item = portfolio.find(p => p.id === id);
       await fetch(`/api/portfolio/${id}`, {
         method: "PUT",
         headers: await getHeaders(),
         body: JSON.stringify({ status })
       });
       await fetchData();
+      pendo.track("portfolio_item_status_updated", {
+        featureId: id,
+        newStatus: status,
+        featureName: item?.featureName?.substring(0, 50) || ""
+      });
     } catch (err) {
       console.error(err);
     }
