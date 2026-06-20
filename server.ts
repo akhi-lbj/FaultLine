@@ -15,13 +15,19 @@ dotenv.config();
 
 if (getApps().length === 0) {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-    if (serviceAccount.private_key) {
-      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    try {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+      if (serviceAccount.private_key) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+      }
+      initializeApp({
+        credential: cert(serviceAccount)
+      });
+      console.log("Firebase initialized successfully with credentials");
+    } catch (parseErr: any) {
+      console.error("FATAL ERROR parsing FIREBASE_SERVICE_ACCOUNT_JSON:", parseErr.message);
+      initializeApp(); // fallback
     }
-    initializeApp({
-      credential: cert(serviceAccount)
-    });
   } else {
     initializeApp();
   }
