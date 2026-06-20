@@ -45,7 +45,7 @@ export default function FinancialRiskCard({ analysis, config }: FinancialRiskCar
     }
   });
 
-  const simulatedFfs = Math.max(10, baseFfs - totalFfsReduction);
+  const simulatedFfs = Math.max(0, baseFfs - totalFfsReduction);
   
   // Recalibrate simulated P_fail
   const exponent = coefA * simulatedFfs + coefB;
