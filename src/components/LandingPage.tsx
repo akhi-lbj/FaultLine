@@ -113,21 +113,7 @@ export default function LandingPage({ onSignIn }: LandingPageProps) {
             </button>
           </div>
 
-          {/* Micro stats banner with modern border aesthetics */}
-          <div className="grid grid-cols-3 gap-6 pt-10 border-t border-zinc-900/80">
-            <div>
-              <span className="block text-3xl font-extrabold font-display text-zinc-100">85%+</span>
-              <span className="block text-[10px] text-zinc-500 uppercase font-mono tracking-widest mt-1.5 leading-snug font-bold">Politeness Bias Detected</span>
-            </div>
-            <div>
-              <span className="block text-3xl font-extrabold font-display text-rose-500">10x</span>
-              <span className="block text-[10px] text-zinc-500 uppercase font-mono tracking-widest mt-1.5 leading-snug font-bold">Reduced Budget Wastes</span>
-            </div>
-            <div>
-              <span className="block text-3xl font-extrabold font-display text-emerald-400">0.0-1.0</span>
-              <span className="block text-[10px] text-zinc-500 uppercase font-mono tracking-widest mt-1.5 leading-snug font-bold">Calibrated Exposure</span>
-            </div>
-          </div>
+
 
         </div>
 
