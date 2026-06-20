@@ -11,16 +11,19 @@ import {
   ArrowRight,
   Gauge,
   Flame,
-  UserCheck
+  UserCheck,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface LandingPageProps {
   onSignIn: () => void;
+  isLightTheme?: boolean;
+  toggleTheme?: () => void;
 }
 
-export default function LandingPage({ onSignIn }: LandingPageProps) {
+export default function LandingPage({ onSignIn, isLightTheme = false, toggleTheme }: LandingPageProps) {
   const [selectedDemoIndex, setSelectedDemoIndex] = useState(0);
-  const isLightTheme = false; // Always use dark theme for landing page
 
   const demoTranscripts = [
     {
@@ -47,11 +50,11 @@ export default function LandingPage({ onSignIn }: LandingPageProps) {
   ];
 
   return (
-    <div className={`min-h-screen bg-[#050507] text-zinc-100 flex flex-col font-sans antialiased relative overflow-hidden transition-colors duration-300 ${isLightTheme ? 'light-theme' : ''}`}>
+    <div className={`min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans antialiased relative overflow-hidden transition-colors duration-300 ${isLightTheme ? 'light-theme' : ''}`}>
       
       {/* Decorative ambient blobs (dynamic values per theme for pristine rendering) */}
-      <div className={`absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-[140px] pointer-events-none -translate-y-1/2 transition-all duration-700 ${isLightTheme ? 'bg-red-500/5 opacity-55' : 'bg-red-600/12 opacity-100'}`}></div>
-      <div className={`absolute bottom-0 right-1/4 w-[700px] h-[700px] rounded-full blur-[180px] pointer-events-none translate-y-1/3 transition-all duration-700 ${isLightTheme ? 'bg-purple-500/4 opacity-40' : 'bg-purple-600/6 opacity-100'}`}></div>
+      <div className={`absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-[140px] pointer-events-none -translate-y-1/2 transition-all duration-700 ${isLightTheme ? 'bg-gradient-to-br from-red-400/20 to-orange-300/20 opacity-70' : 'bg-red-600/12 opacity-100'}`}></div>
+      <div className={`absolute bottom-0 right-1/4 w-[700px] h-[700px] rounded-full blur-[180px] pointer-events-none translate-y-1/3 transition-all duration-700 ${isLightTheme ? 'bg-gradient-to-tr from-purple-400/20 to-indigo-300/20 opacity-60' : 'bg-purple-600/6 opacity-100'}`}></div>
 
       {/* Top Navigation */}
       <header className="h-20 border-b border-zinc-900 px-6 sm:px-12 flex items-center justify-between bg-zinc-950/40 backdrop-blur-md relative z-20 transition-all">
@@ -70,9 +73,27 @@ export default function LandingPage({ onSignIn }: LandingPageProps) {
         </div>
 
         <div className="flex items-center gap-4">
+          {toggleTheme && (
+            <button
+              onClick={toggleTheme}
+              className={`p-2 rounded-lg border transition-all cursor-pointer ${
+                isLightTheme 
+                  ? 'bg-white border-zinc-200 text-amber-500 hover:bg-zinc-50' 
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+              }`}
+              title={`Switch to ${isLightTheme ? 'dark' : 'light'} mode`}
+            >
+              {isLightTheme ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+          )}
+
           <button
             onClick={onSignIn}
-            className="flex items-center gap-2 text-[10px] font-mono font-bold tracking-wider px-4 py-2.5 rounded-xl bg-zinc-900/60 border border-zinc-800 text-zinc-400 hover:text-zinc-100 transition-all cursor-pointer"
+            className={`flex items-center gap-2 text-[10px] font-mono font-bold tracking-wider px-4 py-2.5 rounded-xl border transition-all cursor-pointer ${
+              isLightTheme 
+                ? 'bg-white border-zinc-200 text-zinc-600 hover:text-zinc-900 shadow-sm' 
+                : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:text-zinc-100'
+            }`}
           >
             SIGN IN
           </button>
@@ -139,7 +160,7 @@ export default function LandingPage({ onSignIn }: LandingPageProps) {
                 <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest ml-2">Interactive Transcript Sandbox</span>
               </div>
               <span className={`text-[9px] font-mono px-2.5 py-1 rounded uppercase tracking-wide font-semibold border ${
-                isLightTheme ? 'bg-zinc-100 text-zinc-650 border-zinc-250' : 'bg-zinc-950 text-zinc-400 border-zinc-800/80'
+                isLightTheme ? 'bg-zinc-100 text-zinc-600 border-zinc-200' : 'bg-zinc-950 text-zinc-400 border-zinc-800/80'
               }`}>
                 Live Audit Simulation
               </span>

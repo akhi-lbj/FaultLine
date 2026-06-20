@@ -35,6 +35,27 @@ export default function App() {
   const [hash, setHash] = useState(window.location.hash);
   const { user, loading, logout } = useAuth();
 
+  // Global Theme State lifted to App
+  const [isLightTheme, setIsLightTheme] = useState(() => {
+    return localStorage.getItem("theme") === "light";
+  });
+
+  useEffect(() => {
+    if (isLightTheme) {
+      document.body.classList.add('light-theme');
+    } else {
+      document.body.classList.remove('light-theme');
+    }
+  }, [isLightTheme]);
+
+  const toggleTheme = () => {
+    setIsLightTheme(prev => {
+      const next = !prev;
+      localStorage.setItem("theme", next ? "light" : "dark");
+      return next;
+    });
+  };
+
   useEffect(() => {
     const onHashChange = () => setHash(window.location.hash);
     window.addEventListener('hashchange', onHashChange);
@@ -86,7 +107,7 @@ export default function App() {
         <AuthModal 
           onSuccess={() => { window.location.hash = ''; }} 
           onClose={() => { window.location.hash = ''; }} 
-          isLightTheme={false} 
+          isLightTheme={isLightTheme} 
           initialMode={hash === '#/signup' ? 'signup' : 'login'}
         />
       </div>
@@ -94,37 +115,16 @@ export default function App() {
   }
 
   if (!user) {
-    return <LandingPage onSignIn={() => window.location.hash = '#/login'} />;
+    return <LandingPage onSignIn={() => window.location.hash = '#/login'} isLightTheme={isLightTheme} toggleTheme={toggleTheme} />;
   }
 
-  return <MainApp hash={hash} user={user} loading={loading} logout={logout} />;
+  return <MainApp hash={hash} user={user} loading={loading} logout={logout} isLightTheme={isLightTheme} toggleTheme={toggleTheme} />;
 }
 
-function MainApp({ hash, user, loading, logout }: { hash: string, user: any, loading: boolean, logout: () => void }) {
+function MainApp({ hash, user, loading, logout, isLightTheme, toggleTheme }: { hash: string, user: any, loading: boolean, logout: () => void, isLightTheme: boolean, toggleTheme: () => void }) {
 
   // Tabs State: 0=Transcript, 1=Risk, 2=Business, 3=Portfolio
   const [activeTab, setActiveTab] = useState(0);
-
-  // Global Theme State
-  const [isLightTheme, setIsLightTheme] = useState(() => {
-    return localStorage.getItem("theme") === "light";
-  });
-
-  useEffect(() => {
-    if (isLightTheme) {
-      document.body.classList.add('light-theme');
-    } else {
-      document.body.classList.remove('light-theme');
-    }
-  }, [isLightTheme]);
-
-  const toggleTheme = () => {
-    setIsLightTheme(prev => {
-      const next = !prev;
-      localStorage.setItem("theme", next ? "light" : "dark");
-      return next;
-    });
-  };
 
   // Core Data States
   const [featureName, setFeatureName] = useState("");
