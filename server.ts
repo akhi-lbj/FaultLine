@@ -1054,6 +1054,18 @@ app.post("/api/auth/verify-code", (req, res) => {
   res.json({ success: true, message: "Code verified" });
 });
 
+// GET Analysis by Feature Name
+app.get("/api/analysis/feature/:featureName", requireAuth, (req: any, res: any) => {
+  const featureName = decodeURIComponent(req.params.featureName).toLowerCase();
+  const transcript = memoryStore.transcripts.slice().reverse().find((t: any) => t.featureName.toLowerCase() === featureName);
+  
+  if (transcript) {
+    res.json(transcript);
+  } else {
+    res.status(404).json({ error: "Analysis not found" });
+  }
+});
+
 // GET Portfolio list
 app.get("/api/portfolio", requireAuth, async (req: any, res: any) => {
   const uid = req.user.uid;

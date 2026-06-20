@@ -276,9 +276,21 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
     setActiveTab(0);
     setTimeout(async () => {
       try {
+        const headers = await getHeaders();
+        
+        // Attempt to fetch existing analysis from the database to avoid re-running the AI
+        const fetchRes = await fetch(`/api/analysis/feature/${encodeURIComponent(item.featureName)}`, { headers });
+        if (fetchRes.ok) {
+          const data = await fetchRes.json();
+          setActiveAnalysis(data);
+          await fetchData();
+          return;
+        }
+
+        // Fallback: If not found, run the analysis
         const response = await fetch("/api/analyze", {
           method: "POST",
-          headers: await getHeaders(),
+          headers,
           body: JSON.stringify({
             transcript: matchedTemplate ? matchedTemplate.text : `INTERVIEWER: Tell me, why do you need this custom feature?\nCLIENT: Well, we certainly think it is an outstanding idea!\nINTERVIEWER: Wouldn't it save your team massive operations labor if we built it?\nCLIENT: Yes, absolutely!\nCLIENT: But we currently solve this on Excel and don't have active budget allocated yet.`,
             featureName: item.featureName,
