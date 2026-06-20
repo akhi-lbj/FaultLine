@@ -225,6 +225,18 @@ body, body *, .light-theme, .light-theme * {
   color: #9333ea !important;
 }
 
+.light-theme .bg-indigo-500\/10,
+.light-theme .bg-indigo-950\/30,
+.light-theme .bg-indigo-950\/50 {
+  background-color: #eef2ff !important;
+  color: #4338ca !important;
+  border-color: #c7d2fe !important;
+}
+
+.light-theme .text-indigo-400 {
+  color: #4f46e5 !important;
+}
+
 .light-theme .bg-amber-500\/10,
 .light-theme .bg-amber-950\/30 {
   background-color: #fffbeb !important;
