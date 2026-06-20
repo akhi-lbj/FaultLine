@@ -25,6 +25,7 @@ export default function AuthModal({ onSuccess, onClose, isLightTheme, initialMod
       setLoading(true);
       setError('');
       const res = await loginWithGoogle();
+      pendo.track("user_logged_in", { auth_method: "google" });
       onSuccess(res.user);
     } catch (err: any) {
       if (err.code !== 'auth/popup-closed-by-user') {
@@ -57,6 +58,7 @@ export default function AuthModal({ onSuccess, onClose, isLightTheme, initialMod
       }
       
       setResetSuccess('Password reset email sent. Please check your inbox (and spam/junk folder). After changing your password, you can log in below.');
+      pendo.track("password_reset_requested");
     } catch (err: any) {
       setError(err.message || 'Failed to send reset email');
     } finally {
@@ -76,9 +78,14 @@ export default function AuthModal({ onSuccess, onClose, isLightTheme, initialMod
       setError('');
       if (mode === 'login') {
         const res = await loginWithEmail(email, password);
+        pendo.track("user_logged_in", { auth_method: "email" });
         onSuccess(res.user);
       } else {
         const res = await signupWithEmail(email, password, fullName);
+        pendo.track("user_signed_up", {
+          auth_method: "email",
+          has_full_name: Boolean(fullName)
+        });
         onSuccess(res.user);
       }
     } catch (err: any) {

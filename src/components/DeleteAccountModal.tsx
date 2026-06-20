@@ -60,6 +60,9 @@ export default function DeleteAccountModal({ onClose, onSuccess, isLightTheme }:
       }
       
       setSuccessMsg("Account deletion email sent successfully.");
+      pendo.track("account_deletion_requested", {
+        is_google_user: isGoogleUser
+      });
       setCooldown(60);
     } catch (err: any) {
       setError(err.message || 'Failed to send account deletion email.');
@@ -97,6 +100,8 @@ export default function DeleteAccountModal({ onClose, onSuccess, isLightTheme }:
         const data = await res.json();
         throw new Error(data.error || "Failed to wipe backend data");
       }
+
+      pendo.track("account_deleted", { deletion_method: "immediate" });
 
       // Backend already deletes the Auth user, but we'll also wipe the client session
       await auth.signOut();

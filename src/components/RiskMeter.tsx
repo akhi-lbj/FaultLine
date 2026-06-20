@@ -31,6 +31,10 @@ export default function RiskMeter({ analysis, onConfigChanged }: RiskMeterProps)
       if (data.config) {
         setConfig(data.config);
         onConfigChanged(data.config);
+        pendo.track("calibration_config_updated", {
+          coefficientA: coefA,
+          coefficientB: coefB
+        });
       }
     } catch (err) {
       console.error(err);
