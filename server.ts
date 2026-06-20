@@ -1131,11 +1131,11 @@ app.put("/api/portfolio/:id", requireAuth, async (req: any, res: any) => {
     }
     
     const { status, budget } = req.body;
-    await adminDc.executeMutation("UpdateFeature", {
-      id: featureId,
-      budget: budget !== undefined ? budget : null,
-      status: status !== undefined ? status : null
-    }, { impersonate: { authClaims: { sub: req.user.uid } } });
+    const mutationArgs: any = { id: featureId };
+    if (status !== undefined) mutationArgs.status = status;
+    if (budget !== undefined) mutationArgs.budget = budget;
+
+    await adminDc.executeMutation("UpdateFeature", mutationArgs, { impersonate: { authClaims: { sub: req.user.uid } } });
     
     res.json({ success: true });
   } catch (err: any) {
