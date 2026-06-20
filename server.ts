@@ -13,38 +13,21 @@ import { requireAuth } from "./server/middleware/requireAuth.js";
 // Load environment variables
 dotenv.config();
 
-try {
-  if (getApps().length === 0) {
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-      let serviceAccount;
-      try {
-        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-      } catch (parseErr) {
-        console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Ensure it is valid JSON.");
-      }
-      
-      if (serviceAccount && serviceAccount.private_key) {
-        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-        initializeApp({
-          credential: cert(serviceAccount)
-        });
-      } else {
-        initializeApp();
-      }
-    } else {
-      initializeApp();
+if (getApps().length === 0) {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    if (serviceAccount.private_key) {
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
+    initializeApp({
+      credential: cert(serviceAccount)
+    });
+  } else {
+    initializeApp();
   }
-} catch (initErr) {
-  console.error("Firebase Admin Initialization Error:", initErr);
 }
 
-let adminDc: any = null;
-try {
-  adminDc = getDataConnect({ serviceId: "faultline", location: "us-central1", connector: "default" });
-} catch (dcErr) {
-  console.error("Data Connect Initialization Error:", dcErr);
-}
+const adminDc = getDataConnect({ serviceId: "faultline", location: "us-central1", connector: "default" });
 
 // Load environment variables
 dotenv.config();
@@ -1289,443 +1272,438 @@ app.delete("/api/validation/:id", requireAuth, (req, res) => {
 
 // POST Route for Transcript Analysis
 app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
-  try {
-    const { transcript, featureName, budget } = req.body;
-    const uid = req.user.uid;
-    const email = req.user.email;
-    if (!transcript || !featureName) {
-      return res.status(400).json({ error: "transcript and featureName are required" });
-    }
+  const { transcript, featureName, budget } = req.body;
+  const uid = req.user.uid;
+  const email = req.user.email;
+  if (!transcript || !featureName) {
+    return res.status(400).json({ error: "transcript and featureName are required" });
+  }
 
-    const allocatedBudget = typeof budget === "number" ? budget : 150000;
-    let analysisResult;
+  const allocatedBudget = typeof budget === "number" ? budget : 150000;
+  let analysisResult;
 
-    if (ai) {
-      try {
-        console.log(`Analyzing transcript for ${featureName} using server-side Gemini 3.5 Flash Model...`);
+  if (ai) {
+    try {
+      console.log(`Analyzing transcript for ${featureName} using server-side Gemini 3.5 Flash Model...`);
 
-        const systemInstruction = `
-          You are a principal Roadmap Risk Auditor of enterprise customer validation interviews.
-          Your task is to review the provided transcript of customer interviews/discovery, and output a highly strict structured JSON auditing potential risks.
-          
-          Keep findings fewer, but highly accurate. Avoid low-quality, speculative, or false-positive matching.
-          
-          CRITICAL CLASSIFICATION ENFORCEMENT RULES:
+      const systemInstruction = `
+        You are a principal Roadmap Risk Auditor of enterprise customer validation interviews.
+        Your task is to review the provided transcript of customer interviews/discovery, and output a highly strict structured JSON auditing potential risks.
+        
+        Keep findings fewer, but highly accurate. Avoid low-quality, speculative, or false-positive matching.
+        
+        CRITICAL CLASSIFICATION ENFORCEMENT RULES:
 
-          1. LEADING QUESTIONS (Strictly interviewer lines only):
-             - Only interviewer lines can be leading questions. A leading question pushes/nudges the customer toward agreement.
-             - Customer/Client lines can NEVER be leading questions.
-             - The "speaker" property must be "interviewer".
-             - Look for hypothetical "Wouldn't it be amazing if..." or "Don't you think..." questions, and leading questions asking "So should we build this feature now?" designed to force a positive answer.
-             - Good Examples:
-               * "Interviewer: Wouldn’t it be helpful if your team could instantly know which features are most worth building?" ( frames proposal as obviously useful )
-               * "Interviewer: Don’t you think an AI system would save a lot of time there?" ( nudges customer toward agreement )
-               * "Interviewer: Wouldn’t it be amazing if an AI dashboard could automatically tell you which customer requests deserve roadmap attention?" ( hypothetical amazing outcome )
-               * "Interviewer: Don’t you think manual prioritization is unreliable compared to AI?" ( embedded assumption )
-               * "Interviewer: So should we build this feature now?" ( prematurely pushing for validation to build )
-             - Bad Examples:
-               * "Customer: Not necessarily. Leadership would still override it." ( This is a customer statement; customer lines must NEVER be marked as leading questions! )
+        1. LEADING QUESTIONS (Strictly interviewer lines only):
+           - Only interviewer lines can be leading questions. A leading question pushes/nudges the customer toward agreement.
+           - Customer/Client lines can NEVER be leading questions.
+           - The "speaker" property must be "interviewer".
+           - Look for hypothetical "Wouldn't it be amazing if..." or "Don't you think..." questions, and leading questions asking "So should we build this feature now?" designed to force a positive answer.
+           - Good Examples:
+             * "Interviewer: Wouldn’t it be helpful if your team could instantly know which features are most worth building?" ( frames proposal as obviously useful )
+             * "Interviewer: Don’t you think an AI system would save a lot of time there?" ( nudges customer toward agreement )
+             * "Interviewer: Wouldn’t it be amazing if an AI dashboard could automatically tell you which customer requests deserve roadmap attention?" ( hypothetical amazing outcome )
+             * "Interviewer: Don’t you think manual prioritization is unreliable compared to AI?" ( embedded assumption )
+             * "Interviewer: So should we build this feature now?" ( prematurely pushing for validation to build )
+           - Bad Examples:
+             * "Customer: Not necessarily. Leadership would still override it." ( This is a customer statement; customer lines must NEVER be marked as leading questions! )
 
-          2. POLITENESS BIAS (Customer lines only):
-             - Customer gives weak, vague, socially polite, or non-committal approval indicating a lack of deep pain/friction or real commitment.
-             - The "speaker" property must be "customer".
-             - Good Examples:
-               * "Customer: Yeah, that sounds useful. Prioritization is always hard." ( Positive but generic approval without commitment )
-               * "Customer: I mean, yes, in theory. We do spend a lot of time discussing priorities." ( "Yes, in theory" weakens the agreement )
-               * "Customer: Maybe. It could save time if it was accurate." ( Conditional and non-committal )
-               * "Customer: Interesting idea. It might help, but I’m not sure leadership would accept it." ( Polite but uncertain )
-             - WARNING: Standalone polite approvals are politeness biases, NOT contradictions. Do NOT mark polite positive statements as contradictions!
+        2. POLITENESS BIAS (Customer lines only):
+           - Customer gives weak, vague, socially polite, or non-committal approval indicating a lack of deep pain/friction or real commitment.
+           - The "speaker" property must be "customer".
+           - Good Examples:
+             * "Customer: Yeah, that sounds useful. Prioritization is always hard." ( Positive but generic approval without commitment )
+             * "Customer: I mean, yes, in theory. We do spend a lot of time discussing priorities." ( "Yes, in theory" weakens the agreement )
+             * "Customer: Maybe. It could save time if it was accurate." ( Conditional and non-committal )
+             * "Customer: Interesting idea. It might help, but I’m not sure leadership would accept it." ( Polite but uncertain )
+           - WARNING: Standalone polite approvals are politeness biases, NOT contradictions. Do NOT mark polite positive statements as contradictions!
 
-          3. STRATEGIC CONTRADICTIONS (Customer statement pairs only):
-             - A contradiction MUST compare exactly two customer statements (earlier_quote and later_quote) which logically or factually contradict each other (e.g., claiming massive importance/priority vs later admitting they have zero budget or have other priorities).
-             - Both "quote1" and "quote2" MUST be spoken by the same customer/client (NOT the interviewer).
-             - Both "quote1" and "quote2" must be populated, valid, and distinct customer quotes. Never output a contradiction with only one quote.
-             - The "speaker" property must be "customer".
-             - Good Examples:
-               * Earlier: "Customer: Prioritization is always hard."
-                 Later: "Customer: It is important, but I wouldn’t say urgent. We already have a process that works okay."
-                 Reason: First claims pain is hard/severe, then later claims not urgent and existing process works fine.
-               * Earlier: "Customer: Yes, personally I would find it valuable."
-                 Later: "Customer: Honestly, probably not by itself. Also, if the VP wanted it, we would still build it."
-                 Reason: Customer values it personally but admits actual build/priority won't change.
-               * Earlier: "Customer: I’d definitely want to try it."
-                 Later: "Customer: I’m not sure. Maybe during roadmap planning cycles, but not weekly."
-                 Reason: Initial interest weakens completely when asked about real repeat usage frequency.
-               * Earlier: "Customer: It is messy and time-consuming. We probably spend five or six hours every week..."
-                 Later: "Customer: Probably not this quarter. It is annoying, but we are focused on improving activation and retention first."
-                 Reason: Spends hours on a messy problem weekly, but refuses to buy/prioritize fixing it because it's only an annoyance.
-             - Bad Examples (NOT contradictions):
-               * "Customer: I mean, yes, in theory." ( Politeness bias / weak agreement )
-               * "Customer: Yeah, that sounds useful." ( Politeness bias )
+        3. STRATEGIC CONTRADICTIONS (Customer statement pairs only):
+           - A contradiction MUST compare exactly two customer statements (earlier_quote and later_quote) which logically or factually contradict each other (e.g., claiming massive importance/priority vs later admitting they have zero budget or have other priorities).
+           - Both "quote1" and "quote2" MUST be spoken by the same customer/client (NOT the interviewer).
+           - Both "quote1" and "quote2" must be populated, valid, and distinct customer quotes. Never output a contradiction with only one quote.
+           - The "speaker" property must be "customer".
+           - Good Examples:
+             * Earlier: "Customer: Prioritization is always hard."
+               Later: "Customer: It is important, but I wouldn’t say urgent. We already have a process that works okay."
+               Reason: First claims pain is hard/severe, then later claims not urgent and existing process works fine.
+             * Earlier: "Customer: Yes, personally I would find it valuable."
+               Later: "Customer: Honestly, probably not by itself. Also, if the VP wanted it, we would still build it."
+               Reason: Customer values it personally but admits actual build/priority won't change.
+             * Earlier: "Customer: I’d definitely want to try it."
+               Later: "Customer: I’m not sure. Maybe during roadmap planning cycles, but not weekly."
+               Reason: Initial interest weakens completely when asked about real repeat usage frequency.
+             * Earlier: "Customer: It is messy and time-consuming. We probably spend five or six hours every week..."
+               Later: "Customer: Probably not this quarter. It is annoying, but we are focused on improving activation and retention first."
+               Reason: Spends hours on a messy problem weekly, but refuses to buy/prioritize fixing it because it's only an annoyance.
+           - Bad Examples (NOT contradictions):
+             * "Customer: I mean, yes, in theory." ( Politeness bias / weak agreement )
+             * "Customer: Yeah, that sounds useful." ( Politeness bias )
 
-          4. FRICTION-TO-BEHAVIOR GAPS (Customer lines only):
-             - Detect instances where the customer shows missing proof of real behavior, budget, urgency, decision power, or repeated behavior.
-             - Specifying a current workaround that works "okay" or indicating the tool wouldn't be used frequently (e.g., "probably not every week") is a friction gap.
-             - The "speaker" property must be "customer".
-             - Good Examples:
-               * "Customer: Not necessarily. Leadership would still override it if there was a strategic reason." ( Missing decision power; leadership can override )
-               * "Customer: I don’t own the budget. Product Ops or leadership would decide." ( No budget ownership )
-               * "Customer: Maybe. I’d need to see ROI first." ( Weak willingness to pay; requires proof )
-               * "Customer: I’d need proof that it improves roadmap decisions, not just summarizes interviews." ( Adoption depends on validation evidence )
-               * "Customer: I’m not sure. Maybe during roadmap planning cycles, but not weekly." ( No repeated usage commitment / low frequency )
-               * "Customer: Possibly during planning cycles, but probably not every week. We already have a monthly roadmap review process that works okay." ( Low frequency and existing sufficient workaround )
+        4. FRICTION-TO-BEHAVIOR GAPS (Customer lines only):
+           - Detect instances where the customer shows missing proof of real behavior, budget, urgency, decision power, or repeated behavior.
+           - Specifying a current workaround that works "okay" or indicating the tool wouldn't be used frequently (e.g., "probably not every week") is a friction gap.
+           - The "speaker" property must be "customer".
+           - Good Examples:
+             * "Customer: Not necessarily. Leadership would still override it if there was a strategic reason." ( Missing decision power; leadership can override )
+             * "Customer: I don’t own the budget. Product Ops or leadership would decide." ( No budget ownership )
+             * "Customer: Maybe. I’d need to see ROI first." ( Weak willingness to pay; requires proof )
+             * "Customer: I’d need proof that it improves roadmap decisions, not just summarizes interviews." ( Adoption depends on validation evidence )
+             * "Customer: I’m not sure. Maybe during roadmap planning cycles, but not weekly." ( No repeated usage commitment / low frequency )
+             * "Customer: Possibly during planning cycles, but probably not every week. We already have a monthly roadmap review process that works okay." ( Low frequency and existing sufficient workaround )
 
-          All signals returned MUST include: "type", "quote", "speaker", "reason", and "confidence" (0.0 to 1.0) along with UI compatibility fields specified in the schema.
-        `;
+        All signals returned MUST include: "type", "quote", "speaker", "reason", and "confidence" (0.0 to 1.0) along with UI compatibility fields specified in the schema.
+      `;
 
-        const prompt = `
-          Transcript for feature "${featureName}":
-          """
-          ${transcript}
-          """
-        `;
+      const prompt = `
+        Transcript for feature "${featureName}":
+        """
+        ${transcript}
+        """
+      `;
 
-        const responseSchema = {
-          type: Type.OBJECT,
-          properties: {
-            contradictions: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  type: { type: Type.STRING, description: "Must be 'contradiction'" },
-                  quote: { type: Type.STRING, description: "Combined earlier_quote and later_quote text." },
-                  quote1: { type: Type.STRING, description: "Earlier customer statement." },
-                  quote2: { type: Type.STRING, description: "Later customer statement that contradicts the earlier statement." },
-                  speaker: { type: Type.STRING, description: "Must be 'customer'." },
-                  reason: { type: Type.STRING, description: "Detailed explanation of why these statements logically conflict." },
-                  explanation: { type: Type.STRING, description: "Same as reason." },
-                  confidence: { type: Type.NUMBER, description: "Confidence score from 0.0 to 1.0." },
-                  severity: { type: Type.STRING, enum: ["low", "medium", "high"] }
-                },
-                required: ["type", "quote", "quote1", "quote2", "speaker", "reason", "explanation", "confidence", "severity"]
-              }
-            },
-            politenessBiases: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  type: { type: Type.STRING, description: "Must be 'politeness_bias'" },
-                  quote: { type: Type.STRING, description: "Polite customer phrase of soft commitment." },
-                  speaker: { type: Type.STRING, description: "Must be 'customer'." },
-                  reason: { type: Type.STRING, description: "Why this counts as soft consensus politeness bias." },
-                  explanation: { type: Type.STRING, description: "Same as reason." },
-                  confidence: { type: Type.NUMBER, description: "Confidence score from 0.0 to 1.0." },
-                  marker: { type: Type.STRING, description: "The specific polite construct extracted." },
-                  intensity: { type: Type.STRING, enum: ["weak", "moderate", "strong"] }
-                },
-                required: ["type", "quote", "speaker", "reason", "explanation", "confidence", "marker", "intensity"]
-              }
-            },
-            leadingQuestions: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  type: { type: Type.STRING, description: "Must be 'leading_question'" },
-                  quote: { type: Type.STRING, description: "The leading prompt asked by interviewer." },
-                  question: { type: Type.STRING, description: "The identical leading prompt asked by interviewer." },
-                  response: { type: Type.STRING, description: "The customer's rapid agreeable fallback statement." },
-                  speaker: { type: Type.STRING, description: "Must be 'interviewer'. Customer lines must never be leading questions." },
-                  reason: { type: Type.STRING, description: "Analysis of interviewer confirmation prompt bias." },
-                  explanation: { type: Type.STRING, description: "Same as reason." },
-                  confidence: { type: Type.NUMBER, description: "Confidence score from 0.0 to 1.0." },
-                  severity: { type: Type.STRING, enum: ["low", "medium", "high"] }
-                },
-                required: ["type", "quote", "question", "response", "speaker", "reason", "explanation", "confidence", "severity"]
-              }
-            },
-            frictionGaps: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  type: { type: Type.STRING, description: "Must be 'friction_gap'" },
-                  quote: { type: Type.STRING, description: "The customer stated importance statement." },
-                  statedImportance: { type: Type.STRING, description: "Stated importance line." },
-                  actualBehaviorOrLackThereof: { type: Type.STRING, description: "No current tracking mechanisms, low frequency, or lack of budget/urgency." },
-                  speaker: { type: Type.STRING, description: "Must be 'customer'." },
-                  reason: { type: Type.STRING, description: "Comparison explaining the high friction-to-behavior discrepancy." },
-                  explanation: { type: Type.STRING, description: "Same as reason." },
-                  confidence: { type: Type.NUMBER, description: "Confidence score from 0.0 to 1.0." },
-                  gapScore: { type: Type.INTEGER, description: "Severity score of this gap from 1 to 10." }
-                },
-                required: ["type", "quote", "statedImportance", "actualBehaviorOrLackThereof", "speaker", "reason", "explanation", "confidence", "gapScore"]
-              }
-            },
-            narrativeSummary: { type: Type.STRING, description: "A high-level synthesis of executive audit findings." },
-            recommendedNextActions: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  action: { type: Type.STRING, description: "Short de-risking directive." },
-                  description: { type: Type.STRING, description: "Detailed step-by-step description." },
-                  expectedRiskReduction: { type: Type.NUMBER, description: "Estimated probability reduction (e.g. 15 for 15% reduction)." },
-                  difficulty: { type: Type.STRING, enum: ["low", "medium", "high"] },
-                  estimatedEffortHours: { type: Type.NUMBER }
-                },
-                required: ["action", "description", "expectedRiskReduction", "difficulty", "estimatedEffortHours"]
-              }
+      const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+          contradictions: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                type: { type: Type.STRING, description: "Must be 'contradiction'" },
+                quote: { type: Type.STRING, description: "Combined earlier_quote and later_quote text." },
+                quote1: { type: Type.STRING, description: "Earlier customer statement." },
+                quote2: { type: Type.STRING, description: "Later customer statement that contradicts the earlier statement." },
+                speaker: { type: Type.STRING, description: "Must be 'customer'." },
+                reason: { type: Type.STRING, description: "Detailed explanation of why these statements logically conflict." },
+                explanation: { type: Type.STRING, description: "Same as reason." },
+                confidence: { type: Type.NUMBER, description: "Confidence score from 0.0 to 1.0." },
+                severity: { type: Type.STRING, enum: ["low", "medium", "high"] }
+              },
+              required: ["type", "quote", "quote1", "quote2", "speaker", "reason", "explanation", "confidence", "severity"]
             }
           },
-          required: ["contradictions", "politenessBiases", "leadingQuestions", "frictionGaps", "narrativeSummary", "recommendedNextActions"]
-        };
-
-        const result = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: prompt,
-          config: {
-            systemInstruction,
-            responseMimeType: "application/json",
-            responseSchema
+          politenessBiases: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                type: { type: Type.STRING, description: "Must be 'politeness_bias'" },
+                quote: { type: Type.STRING, description: "Polite customer phrase of soft commitment." },
+                speaker: { type: Type.STRING, description: "Must be 'customer'." },
+                reason: { type: Type.STRING, description: "Why this counts as soft consensus politeness bias." },
+                explanation: { type: Type.STRING, description: "Same as reason." },
+                confidence: { type: Type.NUMBER, description: "Confidence score from 0.0 to 1.0." },
+                marker: { type: Type.STRING, description: "The specific polite construct extracted." },
+                intensity: { type: Type.STRING, enum: ["weak", "moderate", "strong"] }
+              },
+              required: ["type", "quote", "speaker", "reason", "explanation", "confidence", "marker", "intensity"]
+            }
+          },
+          leadingQuestions: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                type: { type: Type.STRING, description: "Must be 'leading_question'" },
+                quote: { type: Type.STRING, description: "The leading prompt asked by interviewer." },
+                question: { type: Type.STRING, description: "The identical leading prompt asked by interviewer." },
+                response: { type: Type.STRING, description: "The customer's rapid agreeable fallback statement." },
+                speaker: { type: Type.STRING, description: "Must be 'interviewer'. Customer lines must never be leading questions." },
+                reason: { type: Type.STRING, description: "Analysis of interviewer confirmation prompt bias." },
+                explanation: { type: Type.STRING, description: "Same as reason." },
+                confidence: { type: Type.NUMBER, description: "Confidence score from 0.0 to 1.0." },
+                severity: { type: Type.STRING, enum: ["low", "medium", "high"] }
+              },
+              required: ["type", "quote", "question", "response", "speaker", "reason", "explanation", "confidence", "severity"]
+            }
+          },
+          frictionGaps: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                type: { type: Type.STRING, description: "Must be 'friction_gap'" },
+                quote: { type: Type.STRING, description: "The customer stated importance statement." },
+                statedImportance: { type: Type.STRING, description: "Stated importance line." },
+                actualBehaviorOrLackThereof: { type: Type.STRING, description: "No current tracking mechanisms, low frequency, or lack of budget/urgency." },
+                speaker: { type: Type.STRING, description: "Must be 'customer'." },
+                reason: { type: Type.STRING, description: "Comparison explaining the high friction-to-behavior discrepancy." },
+                explanation: { type: Type.STRING, description: "Same as reason." },
+                confidence: { type: Type.NUMBER, description: "Confidence score from 0.0 to 1.0." },
+                gapScore: { type: Type.INTEGER, description: "Severity score of this gap from 1 to 10." }
+              },
+              required: ["type", "quote", "statedImportance", "actualBehaviorOrLackThereof", "speaker", "reason", "explanation", "confidence", "gapScore"]
+            }
+          },
+          narrativeSummary: { type: Type.STRING, description: "A high-level synthesis of executive audit findings." },
+          recommendedNextActions: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                action: { type: Type.STRING, description: "Short de-risking directive." },
+                description: { type: Type.STRING, description: "Detailed step-by-step description." },
+                expectedRiskReduction: { type: Type.NUMBER, description: "Estimated probability reduction (e.g. 15 for 15% reduction)." },
+                difficulty: { type: Type.STRING, enum: ["low", "medium", "high"] },
+                estimatedEffortHours: { type: Type.NUMBER }
+              },
+              required: ["action", "description", "expectedRiskReduction", "difficulty", "estimatedEffortHours"]
+            }
           }
-        });
+        },
+        required: ["contradictions", "politenessBiases", "leadingQuestions", "frictionGaps", "narrativeSummary", "recommendedNextActions"]
+      };
 
-        const extracted = JSON.parse(result.text.trim());
+      const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+          systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema
+        }
+      });
 
-        // Harmonize lists and ensure complete safety & compliance with the guidelines
-        const contradictions = (extracted.contradictions || []).map((x: any, i: number) => {
-          const q1 = x.quote1 || "";
-          const q2 = x.quote2 || "";
-          return {
-            ...x,
-            id: `c_${i}_${Date.now()}`,
-            type: "contradiction",
-            quote: x.quote || `Earlier: "${q1}" | Later: "${q2}"`,
-            quote1: q1,
-            quote2: q2,
-            speaker: "customer",
-            reason: x.reason || x.explanation || "Strategic contradiction: Stated importance is contradicted by spreadsheet dependency, manual workaround, or lack of timeline urgency.",
-            explanation: x.explanation || x.reason || "Strategic contradiction: Stated importance is contradicted by spreadsheet dependency, manual workaround, or lack of timeline urgency.",
-            confidence: typeof x.confidence === 'number' ? x.confidence : 0.90
-          };
-        }).filter((x: any) => {
-          // MUST compare two customer statements; never output a contradiction with only one quote.
-          if (!x.quote1 || !x.quote2) return false;
-          if (x.quote1.toLowerCase().trim() === x.quote2.toLowerCase().trim()) return false;
-          // Strip out if speaker is incorrectly marked as interviewer
-          if (x.speaker && x.speaker.toLowerCase() === "interviewer") return false;
-          if (isLinePositiveValidationEvidence(x.quote1) || isLinePositiveValidationEvidence(x.quote2)) return false;
-          return true;
-        });
+      const extracted = JSON.parse(result.text.trim());
 
-        const politenessBiases = (extracted.politenessBiases || []).map((x: any, i: number) => ({
+      // Harmonize lists and ensure complete safety & compliance with the guidelines
+      const contradictions = (extracted.contradictions || []).map((x: any, i: number) => {
+        const q1 = x.quote1 || "";
+        const q2 = x.quote2 || "";
+        return {
           ...x,
-          id: `p_${i}_${Date.now()}`,
-          type: "politeness_bias",
+          id: `c_${i}_${Date.now()}`,
+          type: "contradiction",
+          quote: x.quote || `Earlier: "${q1}" | Later: "${q2}"`,
+          quote1: q1,
+          quote2: q2,
           speaker: "customer",
-          reason: x.reason || x.explanation || "Vague, polite, or non-committal soft approval with missing commitment.",
-          explanation: x.explanation || x.reason || "Vague, polite, or non-committal soft approval with missing commitment.",
-          confidence: typeof x.confidence === 'number' ? x.confidence : 0.85
-        })).filter((x: any) => {
-          // Speaker must be customer
-          if (x.speaker && x.speaker.toLowerCase() === "interviewer") return false;
-          if (isLinePositiveValidationEvidence(x.quote)) return false;
-          return !!x.quote;
-        });
-
-        const leadingQuestions = (extracted.leadingQuestions || []).map((x: any, i: number) => {
-          const questionText = x.question || x.quote || "";
-          return {
-            ...x,
-            id: `l_${i}_${Date.now()}`,
-            type: "leading_question",
-            quote: x.quote || questionText,
-            question: questionText,
-            speaker: "interviewer", // strictly interviewer
-            reason: x.reason || x.explanation || "Interviewer biased question framing pushing customer toward agreement.",
-            explanation: x.explanation || x.reason || "Interviewer biased question framing pushing customer toward agreement.",
-            confidence: typeof x.confidence === 'number' ? x.confidence : 0.92
-          };
-        }).filter((x: any) => {
-          // Only interviewer lines can be leading questions!
-          // If question or quote contains customer roles, discard it.
-          const text = (x.question || "").toUpperCase();
-          if (text.startsWith("CLIENT:") || text.startsWith("CUSTOMER:") || text.startsWith("CLIENT ") || text.startsWith("CUSTOMER ") || text.startsWith("USER:") || text.startsWith("RESPONDENT:")) {
-            return false;
-          }
-          if (x.speaker && x.speaker.toLowerCase() === "customer") {
-            return false;
-          }
-          return !!x.question;
-        });
-
-        const frictionGaps = (extracted.frictionGaps || []).map((x: any, i: number) => {
-          const stated = x.statedImportance || x.quote || "";
-          return {
-            ...x,
-            id: `f_${i}_${Date.now()}`,
-            type: "friction_gap",
-            quote: x.quote || stated,
-            statedImportance: stated,
-            speaker: "customer",
-            reason: x.reason || x.explanation || "Friction-to-behavior gap: claim of importance with missing proof of real behavior, budget, power, timeline, or usage.",
-            explanation: x.explanation || x.reason || "Friction-to-behavior gap: claim of importance with missing proof of real behavior, budget, power, timeline, or usage.",
-            confidence: typeof x.confidence === 'number' ? x.confidence : 0.88
-          };
-        }).filter((x: any) => {
-          // Speaker must be customer
-          if (x.speaker && x.speaker.toLowerCase() === "interviewer") return false;
-          if (isLinePositiveValidationEvidence(x.quote) || isLinePositiveValidationEvidence(x.statedImportance)) return false;
-          return !!x.quote || !!x.statedImportance;
-        });
-
-        const recommendedNextActions = (extracted.recommendedNextActions || []).map((x: any, i: number) => ({
-          ...x,
-          id: `act_${i}_${Date.now()}`
-        }));
-
-        // Let backend run scoring formulas
-        const { ffsRaw, iqsRaw } = calculateHeuristicsScore({
-          contradictions,
-          politenessBiases,
-          leadingQuestions,
-          frictionGaps
-        }, transcript);
-
-        analysisResult = {
-          contradictions,
-          politenessBiases,
-          leadingQuestions,
-          frictionGaps,
-          narrativeSummary: extracted.narrativeSummary,
-          recommendedNextActions,
-          ffsRaw,
-          iqsRaw,
-          confidenceScore: Math.floor(Math.random() * 15) + 80 // 80-95
+          reason: x.reason || x.explanation || "Strategic contradiction: Stated importance is contradicted by spreadsheet dependency, manual workaround, or lack of timeline urgency.",
+          explanation: x.explanation || x.reason || "Strategic contradiction: Stated importance is contradicted by spreadsheet dependency, manual workaround, or lack of timeline urgency.",
+          confidence: typeof x.confidence === 'number' ? x.confidence : 0.90
         };
+      }).filter((x: any) => {
+        // MUST compare two customer statements; never output a contradiction with only one quote.
+        if (!x.quote1 || !x.quote2) return false;
+        if (x.quote1.toLowerCase().trim() === x.quote2.toLowerCase().trim()) return false;
+        // Strip out if speaker is incorrectly marked as interviewer
+        if (x.speaker && x.speaker.toLowerCase() === "interviewer") return false;
+        if (isLinePositiveValidationEvidence(x.quote1) || isLinePositiveValidationEvidence(x.quote2)) return false;
+        return true;
+      });
 
-      } catch (apiError: any) {
-        console.log("[Fallback Triggered] Gemini extraction failed (often due to 503 high demand), using deterministic semantic backstop safely.");
-        analysisResult = deterministicSemanticBackstop(transcript, featureName);
-      }
-    } else {
-      // Failsafe execution
+      const politenessBiases = (extracted.politenessBiases || []).map((x: any, i: number) => ({
+        ...x,
+        id: `p_${i}_${Date.now()}`,
+        type: "politeness_bias",
+        speaker: "customer",
+        reason: x.reason || x.explanation || "Vague, polite, or non-committal soft approval with missing commitment.",
+        explanation: x.explanation || x.reason || "Vague, polite, or non-committal soft approval with missing commitment.",
+        confidence: typeof x.confidence === 'number' ? x.confidence : 0.85
+      })).filter((x: any) => {
+        // Speaker must be customer
+        if (x.speaker && x.speaker.toLowerCase() === "interviewer") return false;
+        if (isLinePositiveValidationEvidence(x.quote)) return false;
+        return !!x.quote;
+      });
+
+      const leadingQuestions = (extracted.leadingQuestions || []).map((x: any, i: number) => {
+        const questionText = x.question || x.quote || "";
+        return {
+          ...x,
+          id: `l_${i}_${Date.now()}`,
+          type: "leading_question",
+          quote: x.quote || questionText,
+          question: questionText,
+          speaker: "interviewer", // strictly interviewer
+          reason: x.reason || x.explanation || "Interviewer biased question framing pushing customer toward agreement.",
+          explanation: x.explanation || x.reason || "Interviewer biased question framing pushing customer toward agreement.",
+          confidence: typeof x.confidence === 'number' ? x.confidence : 0.92
+        };
+      }).filter((x: any) => {
+        // Only interviewer lines can be leading questions!
+        // If question or quote contains customer roles, discard it.
+        const text = (x.question || "").toUpperCase();
+        if (text.startsWith("CLIENT:") || text.startsWith("CUSTOMER:") || text.startsWith("CLIENT ") || text.startsWith("CUSTOMER ") || text.startsWith("USER:") || text.startsWith("RESPONDENT:")) {
+          return false;
+        }
+        if (x.speaker && x.speaker.toLowerCase() === "customer") {
+          return false;
+        }
+        return !!x.question;
+      });
+
+      const frictionGaps = (extracted.frictionGaps || []).map((x: any, i: number) => {
+        const stated = x.statedImportance || x.quote || "";
+        return {
+          ...x,
+          id: `f_${i}_${Date.now()}`,
+          type: "friction_gap",
+          quote: x.quote || stated,
+          statedImportance: stated,
+          speaker: "customer",
+          reason: x.reason || x.explanation || "Friction-to-behavior gap: claim of importance with missing proof of real behavior, budget, power, timeline, or usage.",
+          explanation: x.explanation || x.reason || "Friction-to-behavior gap: claim of importance with missing proof of real behavior, budget, power, timeline, or usage.",
+          confidence: typeof x.confidence === 'number' ? x.confidence : 0.88
+        };
+      }).filter((x: any) => {
+        // Speaker must be customer
+        if (x.speaker && x.speaker.toLowerCase() === "interviewer") return false;
+        if (isLinePositiveValidationEvidence(x.quote) || isLinePositiveValidationEvidence(x.statedImportance)) return false;
+        return !!x.quote || !!x.statedImportance;
+      });
+
+      const recommendedNextActions = (extracted.recommendedNextActions || []).map((x: any, i: number) => ({
+        ...x,
+        id: `act_${i}_${Date.now()}`
+      }));
+
+      // Let backend run scoring formulas
+      const { ffsRaw, iqsRaw } = calculateHeuristicsScore({
+        contradictions,
+        politenessBiases,
+        leadingQuestions,
+        frictionGaps
+      }, transcript);
+
+      analysisResult = {
+        contradictions,
+        politenessBiases,
+        leadingQuestions,
+        frictionGaps,
+        narrativeSummary: extracted.narrativeSummary,
+        recommendedNextActions,
+        ffsRaw,
+        iqsRaw,
+        confidenceScore: Math.floor(Math.random() * 15) + 80 // 80-95
+      };
+
+    } catch (apiError: any) {
+      console.log("[Fallback Triggered] Gemini extraction failed (often due to 503 high demand), using deterministic semantic backstop safely.");
       analysisResult = deterministicSemanticBackstop(transcript, featureName);
     }
+  } else {
+    // Failsafe execution
+    analysisResult = deterministicSemanticBackstop(transcript, featureName);
+  }
 
-    // Positive Validation Signals layer
-    const positiveSigsResult = detectPositiveValidationSignals(transcript);
-    const positiveBonus = Math.min(25, Math.round(positiveSigsResult.positiveScore * 0.25));
-    analysisResult.ffsRaw = Math.max(0, analysisResult.ffsRaw - positiveBonus);
+  // Positive Validation Signals layer
+  const positiveSigsResult = detectPositiveValidationSignals(transcript);
+  const positiveBonus = Math.min(25, Math.round(positiveSigsResult.positiveScore * 0.25));
+  analysisResult.ffsRaw = Math.max(0, analysisResult.ffsRaw - positiveBonus);
 
-    // Calculate final probabilities using platt scaling from active config setting
-    const pFail = calibratePFail(analysisResult.ffsRaw, memoryStore.config.coefficientA, memoryStore.config.coefficientB);
-    const expectedLoss = Math.round(allocatedBudget * pFail);
-    const recommendation = getGovernanceRecommendation(pFail, analysisResult.ffsRaw, analysisResult.iqsRaw, positiveSigsResult.positiveScore, positiveSigsResult.positives);
+  // Calculate final probabilities using platt scaling from active config setting
+  const pFail = calibratePFail(analysisResult.ffsRaw, memoryStore.config.coefficientA, memoryStore.config.coefficientB);
+  const expectedLoss = Math.round(allocatedBudget * pFail);
+  const recommendation = getGovernanceRecommendation(pFail, analysisResult.ffsRaw, analysisResult.iqsRaw, positiveSigsResult.positiveScore, positiveSigsResult.positives);
 
-    const fullAnalysis = {
-      id: "tr_" + Date.now().toString(36),
+  const fullAnalysis = {
+    id: "tr_" + Date.now().toString(36),
+    featureName,
+    transcriptText: transcript,
+    ...analysisResult,
+    pFail,
+    budget: allocatedBudget,
+    expectedLoss,
+    recommendation,
+    createdAt: new Date().toISOString()
+  };
+
+  // Add analyzed transcript to db log
+  memoryStore.transcripts.push(fullAnalysis);
+
+  // Sync with active portfolio view! Add item or update existing item matching featureName
+  const existingIndex = memoryStore.portfolio.findIndex(p => p.featureName.toLowerCase() === featureName.toLowerCase());
+  if (existingIndex >= 0) {
+    memoryStore.portfolio[existingIndex] = {
+      ...memoryStore.portfolio[existingIndex],
+      ffsRaw: fullAnalysis.ffsRaw,
+      iqsRaw: fullAnalysis.iqsRaw,
+      pFail,
+      budget: allocatedBudget,
+      expectedLoss,
+      recommendation
+    };
+  } else {
+    memoryStore.portfolio.push({
+      id: "p_" + Date.now().toString(36),
       featureName,
-      transcriptText: transcript,
-      ...analysisResult,
+      ffsRaw: fullAnalysis.ffsRaw,
+      iqsRaw: fullAnalysis.iqsRaw,
       pFail,
       budget: allocatedBudget,
       expectedLoss,
       recommendation,
-      createdAt: new Date().toISOString()
-    };
-
-    // Add analyzed transcript to db log
-    memoryStore.transcripts.push(fullAnalysis);
-
-    // Sync with active portfolio view! Add item or update existing item matching featureName
-    const existingIndex = memoryStore.portfolio.findIndex(p => p.featureName.toLowerCase() === featureName.toLowerCase());
-    if (existingIndex >= 0) {
-      memoryStore.portfolio[existingIndex] = {
-        ...memoryStore.portfolio[existingIndex],
-        ffsRaw: fullAnalysis.ffsRaw,
-        iqsRaw: fullAnalysis.iqsRaw,
-        pFail,
-        budget: allocatedBudget,
-        expectedLoss,
-        recommendation
-      };
-    } else {
-      memoryStore.portfolio.push({
-        id: "p_" + Date.now().toString(36),
-        featureName,
-        ffsRaw: fullAnalysis.ffsRaw,
-        iqsRaw: fullAnalysis.iqsRaw,
-        pFail,
-        budget: allocatedBudget,
-        expectedLoss,
-        recommendation,
-        status: "Reviewing"
-      });
-    }
-
-    saveStore();
-    
-    // --- Asynchronously fire Data Connect writes (so we don't slow down the response) ---
-    (async () => {
-      try {
-        const imp = { impersonate: { authClaims: { sub: uid } } };
-        
-        // 1. Ensure User exists (already handled in /api/auth/sync-user or we can run UpsertUser)
-        await adminDc.executeMutation("UpsertUser", { email, displayName: null, photoUrl: null }, imp).catch(() => {});
-
-        // 2. Find or create the Feature using raw GraphQL since we don't have GetFeatureByName query
-        const queryStr = `query FindFeature { features(where: { name: { eq: "${featureName.replace(/"/g, '\\"')}" }, user: { uid: { eq: "${uid}" } } }) { id } }`;
-        const fResult = await adminDc.executeGraphql(queryStr);
-        
-        let featureId;
-        if (fResult.data && (fResult.data as any).features && (fResult.data as any).features.length > 0) {
-          featureId = (fResult.data as any).features[0].id;
-          await adminDc.executeMutation("UpdateFeature", { id: featureId, budget: allocatedBudget, status: "Reviewing" }, imp);
-        } else {
-          const newFeat = await adminDc.executeMutation("CreateFeature", { name: featureName, budget: allocatedBudget, status: "Reviewing" }, imp);
-          featureId = (newFeat.data as any).feature_insert.id;
-        }
-        
-        // 3. Insert Transcript
-        const transResult = await adminDc.executeMutation("InsertTranscript", { featureId, rawText: transcript }, imp);
-        const transcriptId = (transResult.data as any).transcript_insert.id;
-        
-        // 4. Insert Analysis Engine Results
-        const analResult = await adminDc.executeMutation("InsertAnalysis", {
-          transcriptId,
-          narrativeSummary: fullAnalysis.narrativeSummary,
-          ffsRaw: fullAnalysis.ffsRaw,
-          iqsRaw: fullAnalysis.iqsRaw,
-          pFail: fullAnalysis.pFail,
-          expectedLoss: fullAnalysis.expectedLoss,
-          recommendation: fullAnalysis.recommendation,
-          confidenceScore: fullAnalysis.confidenceScore
-        }, imp);
-        const analysisId = (analResult.data as any).analysis_insert.id;
-        
-        // 5. Insert Signals & Recommendations sequentially (to avoid bombarding connection)
-        for(const c of fullAnalysis.contradictions) {
-          await adminDc.executeMutation("InsertContradiction", { analysisId, quote1: c.quote1 || "unknown", quote2: c.quote2 || "unknown", explanation: c.explanation || c.reason, severity: c.severity || "medium" }, imp);
-        }
-        for(const p of fullAnalysis.politenessBiases) {
-          await adminDc.executeMutation("InsertPoliteness", { analysisId, quote: p.quote, marker: p.marker, intensity: p.intensity || "medium" }, imp);
-        }
-        for(const l of fullAnalysis.leadingQuestions) {
-          await adminDc.executeMutation("InsertLeadingQuestion", { analysisId, question: l.question || l.quote, response: l.response || "", severity: l.severity || "medium" }, imp);
-        }
-        for(const f of fullAnalysis.frictionGaps) {
-          await adminDc.executeMutation("InsertFrictionGap", { analysisId, statedImportance: f.statedImportance || f.quote, actualBehavior: f.actualBehaviorOrLackThereof || "N/A", gapScore: f.gapScore || 5 }, imp);
-        }
-        for(const a of fullAnalysis.recommendedNextActions) {
-          await adminDc.executeMutation("InsertRecommendedAction", { analysisId, title: a.action, description: a.description, expectedRiskReduction: a.expectedRiskReduction || 0, difficulty: a.difficulty || "medium", estimatedEffortHours: a.estimatedEffortHours || 0 }, imp);
-        }
-        
-        console.log(`Successfully saved analysis & transcript for feature '${featureName}' to Data Connect.`);
-      } catch (dbErr: any) {
-        console.error("Error saving to Data Connect:", dbErr.message);
-      }
-    })();
-    // --- End Data Connect Writes ---
-
-    res.status(200).json(fullAnalysis);
-  } catch (err: any) {
-    console.error("Error analyzing transcript:", err);
-    res.status(500).json({ error: "Failed to analyze transcript" });
+      status: "Reviewing"
+    });
   }
+
+  saveStore();
+  
+  // --- Asynchronously fire Data Connect writes (so we don't slow down the response) ---
+  (async () => {
+    try {
+      const imp = { impersonate: { authClaims: { sub: uid } } };
+      
+      // 1. Ensure User exists (already handled in /api/auth/sync-user or we can run UpsertUser)
+      await adminDc.executeMutation("UpsertUser", { email, displayName: null, photoUrl: null }, imp).catch(() => {});
+
+      // 2. Find or create the Feature using raw GraphQL since we don't have GetFeatureByName query
+      const queryStr = `query FindFeature { features(where: { name: { eq: "${featureName.replace(/"/g, '\\"')}" }, user: { uid: { eq: "${uid}" } } }) { id } }`;
+      const fResult = await adminDc.executeGraphql(queryStr);
+      
+      let featureId;
+      if (fResult.data && (fResult.data as any).features && (fResult.data as any).features.length > 0) {
+        featureId = (fResult.data as any).features[0].id;
+        await adminDc.executeMutation("UpdateFeature", { id: featureId, budget: allocatedBudget, status: "Reviewing" }, imp);
+      } else {
+        const newFeat = await adminDc.executeMutation("CreateFeature", { name: featureName, budget: allocatedBudget, status: "Reviewing" }, imp);
+        featureId = (newFeat.data as any).feature_insert.id;
+      }
+      
+      // 3. Insert Transcript
+      const transResult = await adminDc.executeMutation("InsertTranscript", { featureId, rawText: transcript }, imp);
+      const transcriptId = (transResult.data as any).transcript_insert.id;
+      
+      // 4. Insert Analysis Engine Results
+      const analResult = await adminDc.executeMutation("InsertAnalysis", {
+        transcriptId,
+        narrativeSummary: fullAnalysis.narrativeSummary,
+        ffsRaw: fullAnalysis.ffsRaw,
+        iqsRaw: fullAnalysis.iqsRaw,
+        pFail: fullAnalysis.pFail,
+        expectedLoss: fullAnalysis.expectedLoss,
+        recommendation: fullAnalysis.recommendation,
+        confidenceScore: fullAnalysis.confidenceScore
+      }, imp);
+      const analysisId = (analResult.data as any).analysis_insert.id;
+      
+      // 5. Insert Signals & Recommendations sequentially (to avoid bombarding connection)
+      for(const c of fullAnalysis.contradictions) {
+        await adminDc.executeMutation("InsertContradiction", { analysisId, quote1: c.quote1 || "unknown", quote2: c.quote2 || "unknown", explanation: c.explanation || c.reason, severity: c.severity || "medium" }, imp);
+      }
+      for(const p of fullAnalysis.politenessBiases) {
+        await adminDc.executeMutation("InsertPoliteness", { analysisId, quote: p.quote, marker: p.marker, intensity: p.intensity || "medium" }, imp);
+      }
+      for(const l of fullAnalysis.leadingQuestions) {
+        await adminDc.executeMutation("InsertLeadingQuestion", { analysisId, question: l.question || l.quote, response: l.response || "", severity: l.severity || "medium" }, imp);
+      }
+      for(const f of fullAnalysis.frictionGaps) {
+        await adminDc.executeMutation("InsertFrictionGap", { analysisId, statedImportance: f.statedImportance || f.quote, actualBehavior: f.actualBehaviorOrLackThereof || "N/A", gapScore: f.gapScore || 5 }, imp);
+      }
+      for(const a of fullAnalysis.recommendedNextActions) {
+        await adminDc.executeMutation("InsertRecommendedAction", { analysisId, title: a.action, description: a.description, expectedRiskReduction: a.expectedRiskReduction || 0, difficulty: a.difficulty || "medium", estimatedEffortHours: a.estimatedEffortHours || 0 }, imp);
+      }
+      
+      console.log(`Successfully saved analysis & transcript for feature '${featureName}' to Data Connect.`);
+    } catch (dbErr: any) {
+      console.error("Error saving to Data Connect:", dbErr.message);
+    }
+  })();
+  // --- End Data Connect Writes ---
+
+  res.status(200).json(fullAnalysis);
 });
 
 // Endpoint to quickly view Cloud SQL Database Contents

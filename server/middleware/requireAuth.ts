@@ -9,13 +9,12 @@ process.env.GOOGLE_CLOUD_PROJECT = process.env.FIREBASE_PROJECT_ID;
 const initializeFirebaseAdmin = () => {
   if (getApps().length > 0) return;
 
-  try {
-    initializeApp({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-    });
-  } catch (err) {
-    console.error("Firebase Admin Initialization in requireAuth failed:", err);
-  }
+  // Initialize using environment variables - assumed to be configured 
+  // via FIREBASE_CONFIG or GOOGLE_APPLICATION_CREDENTIALS in Cloud Run,
+  // OR fallback to default app if not provided explicitly.
+  initializeApp({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+  });
 };
 
 initializeFirebaseAdmin();
