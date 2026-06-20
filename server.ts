@@ -1726,8 +1726,8 @@ app.get("/api/sql-viewer", requireAuth, async (req: any, res: any) => {
 import { sql } from 'drizzle-orm';
 import { inArray } from 'drizzle-orm';
 
-// Email sending logic via Resend
-const hasEmailConfig = () => !!process.env.RESEND_API_KEY;
+// Email sending logic via SendGrid
+const hasEmailConfig = () => !!process.env.SENDGRID_API_KEY;
 
 async function sendEmail({ to, subject, html }: { to: string, subject: string, html: string }) {
   if (!hasEmailConfig()) {
@@ -1736,28 +1736,40 @@ async function sendEmail({ to, subject, html }: { to: string, subject: string, h
   }
 
   const fromName = process.env.SMTP_FROM_NAME || "FaultLine";
-  // Resend free tier requires using onboarding@resend.dev unless a domain is verified
-  const fromEmail = process.env.SMTP_FROM_EMAIL || "onboarding@resend.dev"; 
+  const fromEmail = process.env.SMTP_FROM_EMAIL;
 
-  const response = await fetch("https://api.resend.com/emails", {
+  if (!fromEmail) {
+    throw new Error("SMTP_FROM_EMAIL must be set to your SendGrid verified sender email.");
+  }
+
+  const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+      "Authorization": `Bearer ${process.env.SENDGRID_API_KEY}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      from: `${fromName} <${fromEmail}>`,
-      to: [to],
+      personalizations: [
+        {
+          to: [{ email: to }]
+        }
+      ],
+      from: { email: fromEmail, name: fromName },
       subject: subject,
-      html: html
+      content: [
+        {
+          type: "text/html",
+          value: html
+        }
+      ]
     })
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Resend API error: ${response.status} ${errorText}`);
+    throw new Error(`SendGrid API error: ${response.status} ${errorText}`);
   }
-  return await response.json();
+  return true; // SendGrid returns 202 Accepted with no JSON body
 }
 
 const accountActionTokens = new Map();
@@ -1879,18 +1891,18 @@ app.post("/api/account-deletion/request", requireAuth, async (req: any, res: any
     if (!hasEmailConfig()) {
       console.log("\n===================================================================");
       console.log("DEV MODE - EMAIL BYPASS");
-      console.log("Since no RESEND_API_KEY is configured, click the link below to delete your account:");
+      console.log("Since no SENDGRID_API_KEY is configured, click the link below to delete your account:");
       console.log(confirmLink);
       console.log("===================================================================\n");
       return res.status(200).json({ success: true, message: "Email sent (Check Terminal)" });
     }
     try {
-      const info = await sendEmail({
+      await sendEmail({
         to: email,
         subject: "Confirm Account Deletion",
         html: htmlBody,
       });
-      console.log("Email sent successfully via Resend! ID:", info?.id);
+      console.log("Email sent successfully via SendGrid!");
     } catch (emailErr) {
       console.error("Email send failed:", emailErr);
       return res.status(500).json({ error: "Failed to send confirmation email. Please try again later." });
