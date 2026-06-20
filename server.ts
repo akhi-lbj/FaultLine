@@ -1272,7 +1272,8 @@ app.delete("/api/validation/:id", requireAuth, (req, res) => {
 
 // POST Route for Transcript Analysis
 app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
-  const { transcript, featureName, budget } = req.body;
+  try {
+    const { transcript, featureName, budget } = req.body;
   const uid = req.user.uid;
   const email = req.user.email;
   if (!transcript || !featureName) {
@@ -1641,9 +1642,8 @@ app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
 
   saveStore();
   
-  // --- Asynchronously fire Data Connect writes (so we don't slow down the response) ---
-  (async () => {
-    try {
+  // --- Await Data Connect writes so Vercel does not freeze them ---
+  try {
       const imp = { impersonate: { authClaims: { sub: uid } } };
       
       // 1. Ensure User exists (already handled in /api/auth/sync-user or we can run UpsertUser)
@@ -1700,10 +1700,13 @@ app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
     } catch (dbErr: any) {
       console.error("Error saving to Data Connect:", dbErr.message);
     }
-  })();
-  // --- End Data Connect Writes ---
+    // --- End Data Connect Writes ---
 
-  res.status(200).json(fullAnalysis);
+    res.status(200).json(fullAnalysis);
+  } catch (err: any) {
+    console.error("Top level Error analyzing transcript:", err);
+    res.status(500).json({ error: "Failed to analyze transcript", message: err.message });
+  }
 });
 
 // Endpoint to quickly view Cloud SQL Database Contents
