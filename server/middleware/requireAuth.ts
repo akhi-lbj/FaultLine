@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { initializeApp, getApps } from "firebase-admin/app";
+import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import * as dotenv from "dotenv";
 
@@ -9,12 +9,16 @@ process.env.GOOGLE_CLOUD_PROJECT = process.env.FIREBASE_PROJECT_ID;
 const initializeFirebaseAdmin = () => {
   if (getApps().length > 0) return;
 
-  // Initialize using environment variables - assumed to be configured 
-  // via FIREBASE_CONFIG or GOOGLE_APPLICATION_CREDENTIALS in Cloud Run,
-  // OR fallback to default app if not provided explicitly.
-  initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-  });
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    initializeApp({
+      credential: cert(serviceAccount)
+    });
+  } else {
+    initializeApp({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+    });
+  }
 };
 
 initializeFirebaseAdmin();
