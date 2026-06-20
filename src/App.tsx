@@ -392,9 +392,15 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
         
         {/* Brand Identity Header Block */}
         <div 
-          onClick={() => window.location.hash = ''}
+          onClick={() => {
+            window.location.hash = '';
+            setFeatureName('');
+            setTranscriptText('');
+            setActiveAnalysis(null);
+            setActiveTab(3);
+          }}
           className="p-5 border-b border-zinc-800 flex items-center justify-between shrink-0 hover:bg-zinc-900/30 cursor-pointer group transition-all"
-          title="Return to Landing Page"
+          title="Return to Home/Portfolio"
         >
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center font-bold italic tracking-tighter text-lg text-white shadow-[0_0_15px_rgba(220,38,38,0.4)] font-display group-hover:scale-105 transition-transform">
@@ -596,18 +602,6 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
               </button>
             </div>
           )}
-          <div className="bg-zinc-900/40 border border-zinc-800 rounded-lg p-3 space-y-1.5">
-            <p className="text-[9px] text-zinc-500 uppercase font-mono font-bold tracking-wider leading-none">System Status</p>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_theme(colors.emerald.500)]"></div>
-                <p className="text-[10px] text-zinc-300 font-mono">Engine Online</p>
-              </div>
-              <span className="text-[8px] text-zinc-600 font-mono uppercase">
-                Stable
-              </span>
-            </div>
-          </div>
         </div>
 
       </aside>
