@@ -11,6 +11,9 @@ import dotenv from "dotenv";
 import { getDataConnect } from "firebase-admin/data-connect";
 import { requireAuth } from "./server/middleware/requireAuth.js";
 
+import dns from "node:dns";
+dns.setDefaultResultOrder("ipv4first");
+
 // Load environment variables
 dotenv.config();
 
