@@ -6,7 +6,18 @@ import * as dotenv from "dotenv";
 dotenv.config();
 process.env.GOOGLE_CLOUD_PROJECT = process.env.FIREBASE_PROJECT_ID;
 
-// Firebase is initialized in server.ts, so we just use getAuth() in the handler
+const initializeFirebaseAdmin = () => {
+  if (getApps().length > 0) return;
+
+  // Initialize using environment variables - assumed to be configured 
+  // via FIREBASE_CONFIG or GOOGLE_APPLICATION_CREDENTIALS in Cloud Run,
+  // OR fallback to default app if not provided explicitly.
+  initializeApp({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+  });
+};
+
+initializeFirebaseAdmin();
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;

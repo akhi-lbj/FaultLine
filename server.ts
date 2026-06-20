@@ -6,6 +6,7 @@ import nodemailer from "nodemailer";
 import { getAuth } from "firebase-admin/auth";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { GoogleGenAI, Type } from "@google/genai";
+import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { getDataConnect } from "firebase-admin/data-connect";
 import { requireAuth } from "./server/middleware/requireAuth.js";
@@ -15,19 +16,10 @@ dotenv.config();
 
 if (getApps().length === 0) {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-    try {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-      if (serviceAccount.private_key) {
-        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-      }
-      initializeApp({
-        credential: cert(serviceAccount)
-      });
-      console.log("Firebase initialized successfully with credentials");
-    } catch (parseErr: any) {
-      console.error("FATAL ERROR parsing FIREBASE_SERVICE_ACCOUNT_JSON:", parseErr.message);
-      initializeApp(); // fallback
-    }
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    initializeApp({
+      credential: cert(serviceAccount)
+    });
   } else {
     initializeApp();
   }
@@ -1065,7 +1057,7 @@ app.get("/api/portfolio", requireAuth, async (req: any, res: any) => {
   
   try {
     const result = await adminDc.executeQuery("GetPortfolioByUser", undefined, { impersonate: { authClaims: { sub: uid } } });
-    const features = (result.data as any).features || [];
+    const features = result.data.features || [];
     
     const portfolio = features.map((f: any) => {
       let analysis = null;
@@ -1111,7 +1103,7 @@ app.post("/api/portfolio", requireAuth, async (req: any, res: any) => {
     }, { impersonate: { authClaims: { sub: uid } } });
 
     res.status(201).json({
-      id: (result.data as any).feature_insert.id,
+      id: result.data.feature_insert.id,
       featureName,
       budget: budget || 100000,
       status: status || "InDiscovery",
@@ -1278,8 +1270,7 @@ app.delete("/api/validation/:id", requireAuth, (req, res) => {
 
 // POST Route for Transcript Analysis
 app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
-  try {
-    const { transcript, featureName, budget } = req.body;
+  const { transcript, featureName, budget } = req.body;
   const uid = req.user.uid;
   const email = req.user.email;
   if (!transcript || !featureName) {
@@ -1463,7 +1454,7 @@ app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
       };
 
       const result = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.5-flash",
         contents: prompt,
         config: {
           systemInstruction,
@@ -1648,8 +1639,9 @@ app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
 
   saveStore();
   
-  // --- Await Data Connect writes so Vercel does not freeze them ---
-  try {
+  // --- Asynchronously fire Data Connect writes (so we don't slow down the response) ---
+  (async () => {
+    try {
       const imp = { impersonate: { authClaims: { sub: uid } } };
       
       // 1. Ensure User exists (already handled in /api/auth/sync-user or we can run UpsertUser)
@@ -1660,17 +1652,17 @@ app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
       const fResult = await adminDc.executeGraphql(queryStr);
       
       let featureId;
-      if (fResult.data && (fResult.data as any).features && (fResult.data as any).features.length > 0) {
-        featureId = (fResult.data as any).features[0].id;
+      if (fResult.data && fResult.data.features && fResult.data.features.length > 0) {
+        featureId = fResult.data.features[0].id;
         await adminDc.executeMutation("UpdateFeature", { id: featureId, budget: allocatedBudget, status: "Reviewing" }, imp);
       } else {
         const newFeat = await adminDc.executeMutation("CreateFeature", { name: featureName, budget: allocatedBudget, status: "Reviewing" }, imp);
-        featureId = (newFeat.data as any).feature_insert.id;
+        featureId = newFeat.data.feature_insert.id;
       }
       
       // 3. Insert Transcript
       const transResult = await adminDc.executeMutation("InsertTranscript", { featureId, rawText: transcript }, imp);
-      const transcriptId = (transResult.data as any).transcript_insert.id;
+      const transcriptId = transResult.data.transcript_insert.id;
       
       // 4. Insert Analysis Engine Results
       const analResult = await adminDc.executeMutation("InsertAnalysis", {
@@ -1683,7 +1675,7 @@ app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
         recommendation: fullAnalysis.recommendation,
         confidenceScore: fullAnalysis.confidenceScore
       }, imp);
-      const analysisId = (analResult.data as any).analysis_insert.id;
+      const analysisId = analResult.data.analysis_insert.id;
       
       // 5. Insert Signals & Recommendations sequentially (to avoid bombarding connection)
       for(const c of fullAnalysis.contradictions) {
@@ -1706,13 +1698,10 @@ app.post("/api/analyze", requireAuth, async (req: any, res: any) => {
     } catch (dbErr: any) {
       console.error("Error saving to Data Connect:", dbErr.message);
     }
-    // --- End Data Connect Writes ---
+  })();
+  // --- End Data Connect Writes ---
 
-    res.status(200).json(fullAnalysis);
-  } catch (err: any) {
-    console.error("Top level Error analyzing transcript:", err);
-    res.status(500).json({ error: "Failed to analyze transcript", message: err.message });
-  }
+  res.status(200).json(fullAnalysis);
 });
 
 // Endpoint to quickly view Cloud SQL Database Contents
@@ -1724,7 +1713,7 @@ app.get("/api/sql-viewer", requireAuth, async (req: any, res: any) => {
     res.json({
       message: "Data retrieved successfully from Firebase Data Connect",
       mode: "Firebase Data Connect",
-      transcripts: (result.data as any).features || []
+      transcripts: result.data.features || []
     });
   } catch (error: any) {
     res.status(500).json({ error: "Failed to read from DB", message: error.message });
@@ -1971,14 +1960,14 @@ async function performFullAccountWipe(uid: string) {
   try {
     const queryStr = `query FindFeatures { features(where: { user: { uid: { eq: "${uid}" } } }) { id } }`;
     const fResult = await adminDc.executeGraphql(queryStr);
-    if (fResult.data && (fResult.data as any).features) {
-       for (const f of (fResult.data as any).features) {
+    if (fResult.data && fResult.data.features) {
+       for (const f of fResult.data.features) {
            const tResult = await adminDc.executeGraphql(`query { transcripts(where: { featureId: { eq: "${f.id}" } }) { id } }`);
-           if (tResult.data && (tResult.data as any).transcripts) {
-              for (const t of (tResult.data as any).transcripts) {
+           if (tResult.data && tResult.data.transcripts) {
+              for (const t of tResult.data.transcripts) {
                   const aResult = await adminDc.executeGraphql(`query { analyses(where: { transcriptId: { eq: "${t.id}" } }) { id } }`);
-                  if (aResult.data && (aResult.data as any).analyses) {
-                     for (const a of (aResult.data as any).analyses) {
+                  if (aResult.data && aResult.data.analyses) {
+                     for (const a of aResult.data.analyses) {
                         await adminDc.executeGraphql(`mutation { signalContradiction_deleteMany(where: { analysisId: { eq: "${a.id}" } }) }`);
                         await adminDc.executeGraphql(`mutation { signalPoliteness_deleteMany(where: { analysisId: { eq: "${a.id}" } }) }`);
                         await adminDc.executeGraphql(`mutation { signalLeadingQuestion_deleteMany(where: { analysisId: { eq: "${a.id}" } }) }`);
@@ -1997,8 +1986,8 @@ async function performFullAccountWipe(uid: string) {
     // Permanently wipe the User row from Data Connect SQL
     const wipeUserMutation = `mutation WipeUser { user_delete(key: { uid: "${uid}" }) }`;
     const wRes = await adminDc.executeGraphql(wipeUserMutation);
-    if ((wRes as any).errors) {
-      console.error("Failed to delete user row:", (wRes as any).errors);
+    if (wRes.errors) {
+      console.error("Failed to delete user row:", wRes.errors);
     } else {
       console.log(`Successfully wiped user ${uid} from SQL Connect database.`);
     }
@@ -2031,7 +2020,6 @@ app.post("/api/account-deletion/immediate", requireAuth, async (req: any, res: a
 // Serve Frontend Bundle with Vite Middleware in Development
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
-    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa"
@@ -2045,17 +2033,9 @@ async function startServer() {
     });
   }
 
-  // Only listen on a port if not running in Vercel
-  if (!process.env.VERCEL) {
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`FaultLine server listening on http://localhost:${PORT}`);
-    });
-  }
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`FaultLine server listening on http://localhost:${PORT}`);
+  });
 }
 
-// Only start the server if not running in Vercel (where it is used as a serverless function)
-if (!process.env.VERCEL) {
-  startServer();
-}
-
-export default app;
+startServer();
