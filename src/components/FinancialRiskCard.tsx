@@ -102,7 +102,7 @@ export default function FinancialRiskCard({ analysis, config }: FinancialRiskCar
 
             {/* Expected Loss Readout */}
             <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg space-y-3 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-3 text-red-500/5">
+              <div className="absolute top-0 right-0 p-3 text-red-500/20 drop-shadow-[0_0_15px_rgba(239,68,68,0.4)]">
                 <DollarSign className="w-16 h-16" />
               </div>
               <span className="text-[10px] font-mono text-zinc-500 uppercase block">Expected Loss (Fail Budget × P_fail)</span>
@@ -234,11 +234,6 @@ export default function FinancialRiskCard({ analysis, config }: FinancialRiskCar
                       {action.description}
                     </p>
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-1 border-t border-zinc-800/60 text-[9px] font-mono">
-                  <span className="text-zinc-500">Mitigation: -{action.expectedRiskReduction} FFS</span>
-                  <span className="text-zinc-500">Estimate: {action.estimatedEffortHours} hrs</span>
                 </div>
               </div>
             );

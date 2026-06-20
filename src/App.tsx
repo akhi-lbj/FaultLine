@@ -142,6 +142,7 @@ function MainApp({ hash, user, loading, logout }: { hash: string, user: any, loa
 
   // System Loading indicators
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isLoadingSource, setIsLoadingSource] = useState(false);
   const [analysisTextStep, setAnalysisTextStep] = useState("");
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
 
@@ -272,7 +273,7 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
     }
     
     // Trigger analyzer immediately
-    setIsAnalyzing(true);
+    setIsLoadingSource(true);
     setActiveTab(0);
     setTimeout(async () => {
       try {
@@ -288,6 +289,8 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
         }
 
         // Fallback: If not found, run the analysis
+        setIsLoadingSource(false);
+        setIsAnalyzing(true);
         const response = await fetch("/api/analyze", {
           method: "POST",
           headers,
@@ -311,6 +314,7 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
         alert(`Failed to load: ${err.message}`);
       } finally {
         setIsAnalyzing(false);
+        setIsLoadingSource(false);
       }
     }, 1200);
   };
@@ -657,14 +661,16 @@ CLIENT: But we currently solve this on Excel and don't have active budget alloca
         )}
 
         {/* Action-audit processing overlay */}
-        {isAnalyzing && (
+        {(isAnalyzing || isLoadingSource) && (
           <div className="absolute inset-0 bg-zinc-950/90 z-50 flex flex-col items-center justify-center space-y-6 text-center p-6 animate-fade-in">
             <div className="relative">
               <div className="w-16 h-16 rounded-full border-4 border-zinc-900 border-t-red-500 border-r-purple-500 border-l-blue-500 animate-spin"></div>
               <Flame className="w-6 h-6 text-red-500 absolute inset-0 m-auto animate-pulse" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-bold tracking-tight text-white font-mono uppercase">FaultLine auditing in progress</h3>
+              <h3 className="text-lg font-bold tracking-tight text-white font-mono uppercase">
+                {isLoadingSource ? "Loading Source" : "FaultLine auditing in progress"}
+              </h3>
               <p className="text-zinc-500 text-sm max-w-sm font-mono animate-pulse">{analysisTextStep}</p>
             </div>
           </div>
