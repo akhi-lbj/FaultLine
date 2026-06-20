@@ -1726,45 +1726,39 @@ app.get("/api/sql-viewer", requireAuth, async (req: any, res: any) => {
 import { sql } from 'drizzle-orm';
 import { inArray } from 'drizzle-orm';
 
-// Email transport setup
-let transporter: nodemailer.Transporter | null = null;
+// Email sending logic via Resend
+const hasEmailConfig = () => !!process.env.RESEND_API_KEY;
 
-async function setupEmail() {
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS && process.env.SMTP_PORT) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT, 10),
-      secure: process.env.SMTP_SECURE === "true",
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-    console.log("Real SMTP transporter configured successfully.");
-  } else if (process.env.NODE_ENV !== "production") {
-    console.warn("No SMTP properties found. Generating a free Ethereal Email test account...");
-    try {
-      const testAccount = await nodemailer.createTestAccount();
-      transporter = nodemailer.createTransport({
-        host: "smtp.ethereal.email",
-        port: 587,
-        secure: false,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass,
-        },
-      });
-      console.log("Ethereal Email test account configured! Sent emails can be previewed in the terminal.");
-    } catch (err) {
-      console.error("Failed to generate Ethereal account:", err);
-    }
-  } else {
-    console.warn("No SMTP properties found in environment. Email delivery will be unavailable.");
+async function sendEmail({ to, subject, html }: { to: string, subject: string, html: string }) {
+  if (!hasEmailConfig()) {
+    console.log(`\n=== DEV MODE: Email to ${to} ===\nSubject: ${subject}\n\n${html}\n==========================\n`);
+    return null;
   }
-}
 
-// Initialize email
-setupEmail();
+  const fromName = process.env.SMTP_FROM_NAME || "FaultLine";
+  // Resend free tier requires using onboarding@resend.dev unless a domain is verified
+  const fromEmail = process.env.SMTP_FROM_EMAIL || "onboarding@resend.dev"; 
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from: `${fromName} <${fromEmail}>`,
+      to: [to],
+      subject: subject,
+      html: html
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Resend API error: ${response.status} ${errorText}`);
+  }
+  return await response.json();
+}
 
 const accountActionTokens = new Map();
 
@@ -1804,18 +1798,14 @@ app.post("/api/password-reset/request", async (req: any, res: any) => {
       <p>The FaultLine Team</p>
     `;
 
-    if (!transporter) {
-      console.log("\\n=== DEV MODE: PASSWORD RESET LINK ===");
+    if (!hasEmailConfig()) {
+      console.log("\n=== DEV MODE: PASSWORD RESET LINK ===");
       console.log(resetLink);
-      console.log("=====================================\\n");
+      console.log("=====================================\n");
       return res.json({ message: "Dev Mode: Link logged to terminal." });
     }
 
-    const fromName = process.env.SMTP_FROM_NAME || "FaultLine";
-    const fromEmail = process.env.SMTP_FROM_EMAIL || "noreply@faultline.app";
-
-    await transporter.sendMail({
-      from: `"${fromName}" <${fromEmail}>`,
+    await sendEmail({
       to: email,
       subject: "Reset your FaultLine Password",
       html: htmlBody,
@@ -1834,8 +1824,6 @@ app.post("/api/account-deletion/request", requireAuth, async (req: any, res: any
     
     const oneHourAgo = Date.now() - 60 * 60 * 1000;
     const oneMinAgo = Date.now() - 60 * 1000;
-
-    // Removed early transporter check so token can be generated
 
     const userTokens = Array.from(accountActionTokens.values()).filter((t: any) => t.userId === uid && t.tokenType === "account_deletion" && t.createdAt > oneHourAgo);
 
@@ -1888,29 +1876,21 @@ app.post("/api/account-deletion/request", requireAuth, async (req: any, res: any
     `;
 
     // Try to send email
-    if (!transporter) {
+    if (!hasEmailConfig()) {
       console.log("\n===================================================================");
       console.log("DEV MODE - EMAIL BYPASS");
-      console.log("Since no SMTP is configured, click the link below to delete your account:");
+      console.log("Since no RESEND_API_KEY is configured, click the link below to delete your account:");
       console.log(confirmLink);
       console.log("===================================================================\n");
       return res.status(200).json({ success: true, message: "Email sent (Check Terminal)" });
     }
     try {
-      const fromName = process.env.SMTP_FROM_NAME || "FaultLine";
-      const fromEmail = process.env.SMTP_FROM_EMAIL || "noreply@faultline.app";
-      const info = await transporter.sendMail({
-        from: `"${fromName}" <${fromEmail}>`,
+      const info = await sendEmail({
         to: email,
         subject: "Confirm Account Deletion",
         html: htmlBody,
       });
-      console.log("Email sent successfully! Message ID:", info.messageId);
-      
-      const previewUrl = nodemailer.getTestMessageUrl(info);
-      if (previewUrl) {
-        console.log("\n📧 Ethereal Email Preview: " + previewUrl + "\n");
-      }
+      console.log("Email sent successfully via Resend! ID:", info?.id);
     } catch (emailErr) {
       console.error("Email send failed:", emailErr);
       return res.status(500).json({ error: "Failed to send confirmation email. Please try again later." });
